@@ -81,13 +81,14 @@ export const colors = {
   primaryDark: PRIMARY_BLUE[700], // Active states, emphasis
 
   // Background Colors
-  background: GRAY[0], // Main app background
-  backgroundSecondary: GRAY[50], // Card backgrounds, secondary areas
-  backgroundTertiary: GRAY[100], // Subtle background areas
+  background: SECONDARY_BLUE[100], // Main app background - #F2F3F7 from Figma
+  backgroundSecondary: GRAY[0], // Card backgrounds, secondary areas (now white)
+  backgroundTertiary: GRAY[50], // Subtle background areas
 
   // Text Colors
   text: PRIMARY_BLUE[900], // Primary text color
-  textSecondary: GRAY[600], // Secondary text, descriptions
+  textSecondary: GRAY[600], // Secondary text, descriptions (#707173)
+  textSubtitle: "#646466", // Subtitle text from Figma (specific gray)
   textTertiary: GRAY[500], // Placeholder, helper text
   textInverse: GRAY[0], // Text on dark backgrounds
 
@@ -107,6 +108,13 @@ export const colors = {
   widgetBackground: GRAY[0], // Widget main background - white
   widgetContentArea: SECONDARY_BLUE[100], // Widget content area - #F2F3F7
   actionText: ACTION.text, // Action button text - #5A70A1
+
+  // Bottom Sheet & Segmented Control Colors (from Figma)
+  segmentedControlBackground: GRAY[0], // White background for segmented control
+  segmentedControlSelectedBackground: "#C0C7DD", // Selected tab background from Figma
+  segmentedControlSelectedText: PRIMARY_BLUE[900], // Selected tab text (#001848)
+  segmentedControlUnselectedText: "#646466", // Unselected tab text from Figma
+  bottomSheetBackground: SECONDARY_BLUE[100], // Bottom sheet background (#F2F3F7)
 
   // Status Colors
   success: STATUS.success,

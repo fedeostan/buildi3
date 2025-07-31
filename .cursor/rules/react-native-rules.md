@@ -580,5 +580,12 @@ const sendMessage = async (
 9. **Figma**: We are using reausable component that comes from a figma design system, remember always to follow the variables in all cases, color and different components, check if we dont have the existing component before creating a new one and check for existing color variables before creating a new one. Im using feather icons, so just read the icon name and you will find it.
 10. **No Duplicates**: Avoid duplicating files, always read the entire code base and see where to add each content.
 11. **Cursor Workflow**: Always complete all your todo list before stoping the agentic flow. We have a lot of variables and components already, and we will have more, always search the entire codebase to see if you have everything you need, and only if you dont, then create. We already have spacing and color variables so use them. Also if you create new things, follow proper structure.
+12. **Mobile Safe Area Best Practice**: For consistent mobile app padding across all devices and platforms:
+    - **Horizontal padding**: Always use 16px left/right padding (spacing.sm) for consistent content margins
+    - **Vertical padding**: Use dynamic padding with `useSafeAreaInsets` hook + base padding for proper safe area handling
+    - **Implementation**: `paddingTop: Math.max(insets.top, 20) + spacing.lg` ensures minimum 32px base + safe area
+    - **Benefits**: Handles notches, status bars, home indicators, and navigation bars automatically across iOS/Android
+    - **Never use**: Fixed top/bottom padding values or SafeAreaView component - always use the hook for better performance and consistency
+13. **Expo clarificaiton**: There is no need to run Expo command at the end of each change. I will have my server running on the terminal.
 
 Remember: The goal is to learn by seeing. Build the interface first, then add the data and functionality. This way, you can always see your progress and understand what's happening.

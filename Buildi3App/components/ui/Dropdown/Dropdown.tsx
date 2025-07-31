@@ -1,9 +1,12 @@
 import React, { useState, useCallback, useRef, useMemo } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Dimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BottomSheetModal,
   BottomSheetScrollView,
   BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
 } from "@gorhom/bottom-sheet";
 import { Feather } from "@expo/vector-icons";
 import { DropdownProps, DropdownOption } from "./types";
@@ -18,7 +21,14 @@ import { colors } from "../../../theme";
  * - Opens native bottom sheet for option selection
  * - All states: default, filled, success, error
  * - Floating label animation (same as Input)
- * - Smooth bottom sheet interactions
+ * - Smooth bottom sheet interactions with darker backdrop
+ * - Screen-aware percentage-based snap points for proper sizing
+ * - Dynamic content sizing with conditional scrolling
+ * - Respects device screen height (90% max) and custom maxHeight
+ * - Robust safe area handling - content never hidden behind home indicator
+ * - Extra 32px breathing room + 20px buffer for perfect mobile UX
+ * - Minimum 30% screen height for better visibility on all devices
+ * - Intelligent scroll behavior: static view for few items, scroll for many
  * - Accessible and performant
  *
  * Based on Figma: https://www.figma.com/design/HgV69RizRV5dzy7p8gmuIL/Design-System?node-id=24-173
@@ -108,16 +118,60 @@ export const Dropdown: React.FC<DropdownProps> = ({
   const hasValue = !!selectedOption;
   const shouldShowLabel = showFloatingLabel && hasValue;
 
-  // Bottom sheet snap points - dynamic based on content
+  // Proper v5 Dynamic Sizing with screen-aware snapPoints + safe area
+  const { height: screenHeight } = Dimensions.get("window");
+  const insets = useSafeAreaInsets();
+
   const snapPoints = useMemo(() => {
     const baseHeight = 120; // Header + padding
     const itemHeight = 56; // Each option item height
-    const calculatedHeight = Math.min(
-      baseHeight + options.length * itemHeight,
-      maxBottomSheetHeight
-    );
-    return [calculatedHeight];
-  }, [options.length, maxBottomSheetHeight]);
+    const contentHeight = baseHeight + options.length * itemHeight;
+
+    // Calculate required bottom space more explicitly
+    const safeBottomSpace = insets.bottom || 34; // Default home indicator height
+    const extraBottomSpace = 16; // Your requested extra space
+    const totalBottomSpace = safeBottomSpace + extraBottomSpace; // Total space needed
+
+    // Total height including all bottom spacing
+    const totalRequiredHeight = contentHeight + totalBottomSpace;
+
+    const maxHeight = Math.min(screenHeight * 0.9, maxBottomSheetHeight || 600);
+    const finalHeight = Math.min(totalRequiredHeight, maxHeight);
+
+    // Convert to percentage with a small buffer
+    const percentage = ((finalHeight + 20) / screenHeight) * 100; // +20px extra buffer
+
+    return [`${Math.max(percentage, 30)}%`]; // Minimum 30% to ensure visibility
+  }, [options.length, maxBottomSheetHeight, screenHeight, insets.bottom]);
+
+  // Determine if we need scrolling - updated to match snap points logic
+  const needsScrolling = useMemo(() => {
+    const baseHeight = 120;
+    const itemHeight = 56;
+    const contentHeight = baseHeight + options.length * itemHeight;
+
+    const safeBottomSpace = insets.bottom || 34;
+    const extraBottomSpace = 32;
+    const totalBottomSpace = safeBottomSpace + extraBottomSpace;
+    const totalRequiredHeight = contentHeight + totalBottomSpace;
+
+    const maxHeight = Math.min(screenHeight * 0.9, maxBottomSheetHeight || 600);
+    return totalRequiredHeight > maxHeight;
+  }, [options.length, maxBottomSheetHeight, screenHeight, insets.bottom]);
+
+  // Render backdrop with darker background for better focus
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+        opacity={0.6} // Slightly darker than default (0.5) for better contrast
+        pressBehavior="close" // Close when user taps outside
+      />
+    ),
+    []
+  );
 
   // Handle dropdown press
   const handlePress = useCallback(() => {
@@ -262,30 +316,57 @@ export const Dropdown: React.FC<DropdownProps> = ({
         <Text style={styles.successMessage}>{successMessage}</Text>
       )}
 
-      {/* Bottom Sheet Modal */}
+      {/* Bottom Sheet Modal - Proper v5 Implementation */}
       <BottomSheetModal
         ref={bottomSheetRef}
-        snapPoints={snapPoints}
+        snapPoints={snapPoints} // Percentage-based snap points
+        enableDynamicSizing={true} // Auto-size within snap point constraints
         onDismiss={handleBottomSheetDismiss}
         enablePanDownToClose
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
         backgroundStyle={{ backgroundColor: colors.background }}
         handleIndicatorStyle={{ backgroundColor: colors.textTertiary }}
+        backdropComponent={renderBackdrop}
       >
-        <BottomSheetView style={styles.bottomSheetContainer}>
-          {/* Bottom Sheet Header */}
+        <BottomSheetView
+          style={{
+            maxHeight: Math.min(
+              screenHeight * 0.9,
+              maxBottomSheetHeight || 600
+            ),
+            paddingBottom: 20, // Add base padding to the container
+          }}
+        >
+          {/* Header */}
           <View style={styles.bottomSheetHeader}>
             <Text style={styles.bottomSheetTitle}>
               {bottomSheetTitle || `Select ${label}`}
             </Text>
           </View>
 
-          {/* Options List */}
-          <BottomSheetScrollView
-            contentContainerStyle={styles.bottomSheetContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {options.map((item) => renderOptionItem(item))}
-          </BottomSheetScrollView>
+          {/* Content - Conditional scrolling based on content size */}
+          {needsScrolling ? (
+            <BottomSheetScrollView
+              contentContainerStyle={[
+                styles.bottomSheetContent,
+                { paddingBottom: Math.max(insets.bottom + 40, 70) }, // Increased values for better spacing
+              ]}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+            >
+              {options.map((item) => renderOptionItem(item))}
+            </BottomSheetScrollView>
+          ) : (
+            <View
+              style={[
+                styles.bottomSheetContent,
+                { paddingBottom: Math.max(insets.bottom + 40, 70) }, // Increased values for better spacing
+              ]}
+            >
+              {options.map((item) => renderOptionItem(item))}
+            </View>
+          )}
         </BottomSheetView>
       </BottomSheetModal>
     </View>

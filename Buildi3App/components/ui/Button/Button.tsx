@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, View, ActivityIndicator, Animated } from "react-native";
+import { Pressable, View, Animated } from "react-native";
 import { ButtonProps } from "./types";
 import {
   getButtonStyle,
@@ -9,6 +9,7 @@ import {
   DEFAULT_SIZE,
 } from "./styles";
 import { Typography } from "../Typography";
+import { Spinner } from "../Spinner";
 
 /**
  * Button component matching your Figma Design System exactly
@@ -108,9 +109,13 @@ export const Button: React.FC<ButtonProps> = ({
           gap: buttonStyle.gap,
         }}
       >
-        {/* Loading spinner */}
+        {/* Loading spinner - using our custom Spinner */}
         {loading && (
-          <ActivityIndicator size="small" color={finalColors.textColor} />
+          <Spinner
+            size="small"
+            color={finalColors.textColor}
+            accessibilityLabel="Button loading"
+          />
         )}
 
         {/* Button text */}

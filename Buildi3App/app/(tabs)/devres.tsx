@@ -8,8 +8,9 @@ import {
   Input,
   TextArea,
   Dropdown,
-} from "../components";
-import { colors } from "../theme";
+  Spinner,
+} from "../../components";
+import { colors } from "../../theme";
 
 export default function DevRes() {
   // State for input demos
@@ -23,6 +24,9 @@ export default function DevRes() {
   const [countryValue, setCountryValue] = useState("");
   const [priorityValue, setPriorityValue] = useState("");
   const [categoryValue, setCategoryValue] = useState("");
+
+  // Spinner state
+  const [isSpinnerAnimating, setIsSpinnerAnimating] = useState(true);
 
   // Sample dropdown options
   const countryOptions = [
@@ -827,6 +831,222 @@ export default function DevRes() {
 
               {/* Disabled State */}
               <Input label="Disabled State" value="Cannot edit this" disabled />
+            </View>
+          </View>
+        </View>
+
+        {/* NEW: Spinner Component Demo */}
+        <View style={{ marginBottom: 24 }}>
+          <Typography
+            variant="h5"
+            style={{
+              color: colors.text,
+              marginBottom: 16,
+            }}
+          >
+            ⚡ Custom Spinner Component (Figma Design)
+          </Typography>
+
+          <View
+            style={{
+              backgroundColor: colors.backgroundSecondary,
+              padding: 20,
+              borderRadius: 12,
+              marginBottom: 16,
+            }}
+          >
+            <Typography
+              variant="labelMedium"
+              style={{ color: colors.textSecondary, marginBottom: 12 }}
+            >
+              📍 components/ui/Spinner/ (Atom)
+            </Typography>
+            <Typography
+              variant="bodySmall"
+              style={{ color: colors.textTertiary, marginBottom: 16 }}
+            >
+              Custom loading spinner matching your Figma design exactly:
+              {"\n"}• Ring that rotates and pulses but never fully closes
+              {"\n"}• Smooth animations inspired by One UI & Material M3
+              {"\n"}• Uses design system colors (#495D92 default)
+              {"\n"}• Size variants: small (24px), medium (32px), large (48px)
+              {"\n"}• Replaces React Native's ActivityIndicator
+              {"\n"}• Built with react-native-svg for crisp rendering
+            </Typography>
+
+            {/* Interactive Spinner Demo */}
+            <View style={{ gap: 16 }}>
+              <Typography
+                variant="h6"
+                style={{ color: colors.text, marginBottom: 8 }}
+              >
+                🎯 Interactive Demo
+              </Typography>
+
+              {/* Size Variants */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-around",
+                  alignItems: "center",
+                  backgroundColor: colors.background,
+                  padding: 16,
+                  borderRadius: 8,
+                  marginBottom: 12,
+                }}
+              >
+                <View style={{ alignItems: "center" }}>
+                  <Spinner size="small" animating={isSpinnerAnimating} />
+                  <Typography
+                    variant="bodySmall"
+                    style={{ color: colors.textSecondary, marginTop: 8 }}
+                  >
+                    Small
+                  </Typography>
+                </View>
+
+                <View style={{ alignItems: "center" }}>
+                  <Spinner size="medium" animating={isSpinnerAnimating} />
+                  <Typography
+                    variant="bodySmall"
+                    style={{ color: colors.textSecondary, marginTop: 8 }}
+                  >
+                    Medium
+                  </Typography>
+                </View>
+
+                <View style={{ alignItems: "center" }}>
+                  <Spinner size="large" animating={isSpinnerAnimating} />
+                  <Typography
+                    variant="bodySmall"
+                    style={{ color: colors.textSecondary, marginTop: 8 }}
+                  >
+                    Large
+                  </Typography>
+                </View>
+              </View>
+
+              {/* Color Variants */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-around",
+                  alignItems: "center",
+                  backgroundColor: colors.background,
+                  padding: 16,
+                  borderRadius: 8,
+                  marginBottom: 12,
+                }}
+              >
+                <View style={{ alignItems: "center" }}>
+                  <Spinner
+                    size="medium"
+                    color={colors.buttonPrimary}
+                    animating={isSpinnerAnimating}
+                  />
+                  <Typography
+                    variant="bodySmall"
+                    style={{ color: colors.textSecondary, marginTop: 8 }}
+                  >
+                    Primary
+                  </Typography>
+                </View>
+
+                <View style={{ alignItems: "center" }}>
+                  <Spinner
+                    size="medium"
+                    color={colors.actionText}
+                    animating={isSpinnerAnimating}
+                  />
+                  <Typography
+                    variant="bodySmall"
+                    style={{ color: colors.textSecondary, marginTop: 8 }}
+                  >
+                    Action
+                  </Typography>
+                </View>
+
+                <View style={{ alignItems: "center" }}>
+                  <Spinner
+                    size="medium"
+                    color={colors.success}
+                    animating={isSpinnerAnimating}
+                  />
+                  <Typography
+                    variant="bodySmall"
+                    style={{ color: colors.textSecondary, marginTop: 8 }}
+                  >
+                    Success
+                  </Typography>
+                </View>
+              </View>
+
+              {/* Animation Control */}
+              <Button
+                variant="secondary"
+                title={
+                  isSpinnerAnimating ? "Stop Animation" : "Start Animation"
+                }
+                onPress={() => setIsSpinnerAnimating(!isSpinnerAnimating)}
+              />
+
+              {/* Usage in Button */}
+              <View style={{ marginTop: 8 }}>
+                <Typography
+                  variant="bodySmall"
+                  style={{ color: colors.textSecondary, marginBottom: 8 }}
+                >
+                  🔘 Already integrated in Button component:
+                </Typography>
+                <Button
+                  variant="primary"
+                  title="Loading Button"
+                  loading={true}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Technical Details */}
+          <View
+            style={{
+              backgroundColor: colors.backgroundSecondary,
+              padding: 20,
+              borderRadius: 12,
+              marginBottom: 16,
+            }}
+          >
+            <Typography
+              variant="bodySmall"
+              style={{ color: colors.textTertiary, marginBottom: 16 }}
+            >
+              🛠️ Technical Implementation:
+            </Typography>
+
+            <View style={{ gap: 8 }}>
+              <Typography
+                variant="code"
+                style={{
+                  color: colors.text,
+                  backgroundColor: colors.background,
+                  padding: 8,
+                  borderRadius: 4,
+                }}
+              >
+                &lt;Spinner size="medium" color={colors.primary} /&gt;
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                style={{ color: colors.textSecondary, marginTop: 8 }}
+              >
+                • 3 layered animations: rotation (1.2s), arc length (1.8s),
+                radius (2s)
+                {"\n"}• Native driver for smooth 60fps rotation
+                {"\n"}• Ring spans 10% to 85% but never closes completely
+                {"\n"}• Proportional stroke width based on size
+                {"\n"}• SVG-based for crisp rendering at any density
+              </Typography>
             </View>
           </View>
         </View>

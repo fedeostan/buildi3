@@ -48,7 +48,8 @@ export type FeatherIconName =
   | "alert-triangle"
   | "help-circle"
   | "lock"
-  | "unlock";
+  | "unlock"
+  | "upload";
 
 export interface IconProps {
   /** The Feather icon name to display */
