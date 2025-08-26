@@ -6,7 +6,8 @@ import { colors, componentSpacing } from "../../../theme";
  *
  * Based on Figma Design System specs:
  * - Container: Flexbox row with space-between alignment
- * - Padding: 16px horizontal padding
+ * - No horizontal padding (parent screen handles this)
+ * - Vertical padding: 16px for proper spacing
  * - Gap: 16px gap between elements (adjusted from 12px in Figma)
  * - Typography: Date in gray, greeting in primary blue
  */
@@ -17,9 +18,9 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: componentSpacing.dashboardHeader.padding, // 16px
+    // No horizontal padding - parent screen handles this
     paddingVertical: componentSpacing.dashboardHeader.verticalPadding, // 16px
-    backgroundColor: colors.background, // White background
+    backgroundColor: colors.background, // Background matches screen
   },
 
   // Greeting text container - center content with proper spacing

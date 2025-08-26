@@ -21,6 +21,11 @@ export { default as TopNavigationBar } from "./TopNavigationBar";
 export { default as WidgetTitle } from "./WidgetTitle";
 export { default as SwapItem } from "./SwapItem";
 export { default as Widget } from "./Widget";
+export { default as NextTaskContainer } from "./NextTaskContainer";
+export { default as NextTaskWidget } from "./NextTaskWidget";
+export { default as ProjectItem } from "./ProjectItem";
+export { default as ProjectList } from "./ProjectList";
+export { default as ProjectWidget } from "./ProjectWidget";
 
 // Input system (React Native best practices with Figma design)
 export { default as Input } from "./Input";

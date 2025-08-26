@@ -11,10 +11,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.widgetContentArea, // #F2F3F7 from Figma
     borderRadius: 16, // 16px border radius from Figma
     width: "100%",
-    minHeight: 120, // 120px height from Figma
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16, // 16px gap from Figma
+    minHeight: 60, // Reduced minimum height to allow better content fitting
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
@@ -27,9 +24,7 @@ export const styles = StyleSheet.create({
 
   // Content wrapper when children are provided
   contentWrapper: {
-    flex: 1,
     width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    alignItems: "stretch", // Allow content to determine height
   },
 });

@@ -61,7 +61,7 @@ export const SwapItem: React.FC<SwapItemProps> = ({
           {placeholderText}
         </Typography>
       ) : (
-        // Content state - Render children
+        // Content state - Render children with full width
         <View style={styles.contentWrapper}>{children}</View>
       )}
     </View>

@@ -13,9 +13,12 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
  * - complete-profile.tsx (Complete Profile) - NO bottom tabs
  * - role-selection.tsx (Role Selection) - NO bottom tabs
  * - (tabs)/ folder - WITH bottom tabs (main app)
+ * - profile.tsx (User Profile) - Full screen modal
+ * - notifications.tsx (Notifications Hub) - Full screen modal
  *
  * This allows the authentication and onboarding screens to be full-screen without navigation,
  * while main app screens have proper tab navigation.
+ * Profile and notifications are accessible from anywhere via DashboardHeader.
  */
 export default function RootLayout() {
   return (
@@ -84,6 +87,23 @@ export default function RootLayout() {
             name="(tabs)"
             options={{
               title: "Main App",
+            }}
+          />
+
+          {/* Profile and Notifications - Full screen modals accessible from DashboardHeader */}
+          <Stack.Screen
+            name="profile"
+            options={{
+              title: "Profile",
+              presentation: "modal", // Present as modal overlay
+            }}
+          />
+
+          <Stack.Screen
+            name="notifications"
+            options={{
+              title: "Notifications",
+              presentation: "modal", // Present as modal overlay
             }}
           />
         </Stack>

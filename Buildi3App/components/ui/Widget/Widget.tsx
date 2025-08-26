@@ -66,14 +66,22 @@ export const Widget: React.FC<WidgetProps> = ({
         {...titleProps}
       />
 
-      {/* Swap Content Area - Using SwapItem molecule */}
-      <SwapItem
-        placeholderText={placeholderText}
-        minHeight={swapItemMinHeight}
-        {...swapItemProps}
-      >
-        {children}
-      </SwapItem>
+      {/* Content Area - Directly in the widget */}
+      <View style={{
+        width: "100%",
+        minHeight: swapItemMinHeight || 60,
+      }}>
+        {children || (
+          <View style={{
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}>
+            {placeholderText}
+          </View>
+        )}
+      </View>
 
       {/* Button Group - Using Button atom */}
       {showButton && (

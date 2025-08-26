@@ -1,14 +1,19 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Typography } from "../../components/ui";
+import { router } from "expo-router";
 import { colors, spacing } from "../../theme";
+import DashboardHeader from "../../components/ui/DashboardHeader/DashboardHeader";
+import { NextTaskWidget } from "../../components/ui/NextTaskWidget/NextTaskWidget";
+import ProjectWidget from "../../components/ui/ProjectWidget/ProjectWidget";
+import type { Task } from "../../components/ui/NextTaskContainer/types";
 
 /**
  * Home Screen - Main app dashboard
  *
  * This is where users land after completing onboarding
- * Contains the main app functionality
+ * Features the DashboardHeader with time-based greeting and user initials
+ * Provides navigation to profile and notifications screens
  */
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -21,21 +26,67 @@ export default function HomeScreen() {
     },
   });
 
+  // Navigation handlers for DashboardHeader
+  const handleProfilePress = () => {
+    router.push("/profile");
+  };
+
+  const handleNotificationPress = () => {
+    router.push("/notifications");
+  };
+
   return (
     <View style={[styles.container, dynamicStyles.container]}>
-      <Typography variant="h1" style={styles.welcome}>
-        Welcome to Buildi! 🚀
-      </Typography>
+      {/* Dashboard Header with dynamic greeting and navigation */}
+      <DashboardHeader
+        userName="Federico Ostan" // This will come from user context/auth later
+        hasNotifications={true}
+        notificationCount={3}
+        onProfilePress={handleProfilePress}
+        onNotificationPress={handleNotificationPress}
+      />
 
-      <Typography variant="bodyMedium" style={styles.subtitle}>
-        Your construction management journey starts here
-      </Typography>
+      {/* Main Content Area */}
+      <View style={styles.content}>
+        {/* Next Task Widget - Single widget that changes content based on hasTask */}
+        <NextTaskWidget
+          hasTask={true} // Change this to false to see "No upcoming tasks!" state
+          task={{
+            id: "task-1",
+            projectName: "Office Building Renovation",
+            taskTitle: "Review architectural plans and blueprints",
+          }}
+          onViewTask={() => console.log("View task pressed")}
+          style={{ marginBottom: spacing.md }}
+        />
 
-      {/* TODO: Add main app content here */}
-      <View style={styles.placeholder}>
-        <Typography variant="bodyLarge" style={styles.placeholderText}>
-          Main app content will go here...
-        </Typography>
+        {/* Projects Widget - Shows list of projects */}
+        <ProjectWidget
+          projects={[
+            {
+              id: "project-1",
+              name: "Office Building Renovation",
+              iconName: "home",
+              iconColor: "primaryLight",
+              hasPercentage: true,
+              percentage: 75,
+            },
+            {
+              id: "project-2",
+              name: "Shopping Mall Expansion",
+              iconName: "shopping-bag",
+              iconColor: "primaryLight",
+            },
+            {
+              id: "project-3",
+              name: "Residential Complex",
+              iconName: "users",
+              iconColor: "primaryLight",
+            },
+          ]}
+          onAddProject={() => console.log("Add project pressed")}
+          onViewAllProjects={() => console.log("View all projects pressed")}
+        />
       </View>
     </View>
   );
@@ -47,27 +98,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 
-  welcome: {
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-
-  subtitle: {
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-  },
-
-  placeholder: {
+  content: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.lg,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 16,
-  },
-
-  placeholderText: {
-    color: colors.textSecondary,
-    textAlign: "center",
+    marginTop: spacing.lg, // Space between header and content
   },
 });

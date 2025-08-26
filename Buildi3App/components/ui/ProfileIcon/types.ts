@@ -14,8 +14,8 @@ export interface ProfileIconProps {
 
   /**
    * User initials to display
-   * Future: Will be derived from user.name
-   * For now: Uses dummy data "FO" (Federico Ostan)
+   * Will be derived from user.name
+   * Default: "FO" (Federico Ostan)
    */
   initials?: string;
 
@@ -24,4 +24,10 @@ export interface ProfileIconProps {
    * Small red dot indicator on top-right
    */
   hasNotification?: boolean;
+
+  /**
+   * Callback when profile icon is pressed
+   * For navigation to profile screen
+   */
+  onPress?: () => void;
 }
