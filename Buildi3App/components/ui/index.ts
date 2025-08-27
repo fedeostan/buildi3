@@ -26,6 +26,9 @@ export { default as NextTaskWidget } from "./NextTaskWidget";
 export { default as ProjectItem } from "./ProjectItem";
 export { default as ProjectList } from "./ProjectList";
 export { default as ProjectWidget } from "./ProjectWidget";
+export { default as TaskItem } from "./TaskItem";
+export { default as TaskList } from "./TaskList";
+export { default as UpcomingTaskWidget } from "./UpcomingTaskWidget";
 
 // Input system (React Native best practices with Figma design)
 export { default as Input } from "./Input";

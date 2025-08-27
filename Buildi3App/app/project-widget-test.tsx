@@ -1,198 +1,267 @@
-import React from "react";
-import { View, StyleSheet, ScrollView, Alert } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Stack } from "expo-router";
-import { ProjectWidget } from "../components/ui/ProjectWidget";
-import { Typography } from "../components/ui/Typography";
-import { colors, spacing } from "../theme";
+import React, { useState } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import {
+  Typography,
+  UpcomingTaskWidget,
+  TopNavigationBar,
+} from "../components/ui";
+import { spacing, colors } from "../theme";
+import { Task } from "../components/ui/TaskList/types";
+import { TaskFilterPeriod } from "../components/ui/UpcomingTaskWidget/types";
+import { addDays, format } from "date-fns";
 
 /**
- * Demo screen to showcase all variants of ProjectWidget
+ * Example screen for testing the UpcomingTaskWidget component
+ * This shows the widget with different numbers of tasks
  */
-const ProjectWidgetTestScreen = () => {
-  const insets = useSafeAreaInsets();
+export default function WidgetTestScreen() {
+  // State for filter period
+  const [filterPeriod, setFilterPeriod] = useState<TaskFilterPeriod>("Today");
 
-  // Sample projects data
-  const projectsWithFive = [
+  // Sample task data
+  const allTasks: Task[] = [
     {
-      id: "1",
-      name: "Office Building Renovation",
-      projectIconType: "Building",
-      projectIconColor: "Blue Light",
-      hasPercentage: true,
-      percentage: 75,
+      id: "task-1",
+      title: "Complete project proposal",
+      dueDate: new Date(),
+      status: "pending",
     },
     {
-      id: "2",
-      name: "Shopping Mall Expansion",
-      projectIconType: "Building",
-      projectIconColor: "Green Pond",
-      hasPercentage: true,
-      percentage: 45,
+      id: "task-2",
+      title: "Review design mockups",
+      dueDate: addDays(new Date(), 1),
+      status: "pending",
     },
     {
-      id: "3",
-      name: "Residential Complex",
-      projectIconType: "House",
-      projectIconColor: "Pink",
-      hasPercentage: true,
-      percentage: 30,
+      id: "task-3",
+      title: "Team meeting with clients",
+      dueDate: addDays(new Date(), 2),
+      status: "pending",
     },
     {
-      id: "4",
-      name: "Urban Park Development",
-      projectIconType: "Outdoors",
-      projectIconColor: "Green Light",
-      hasPercentage: true,
-      percentage: 60,
+      id: "task-4",
+      title: "Finalize budget spreadsheet",
+      dueDate: addDays(new Date(), 3),
+      status: "pending",
     },
     {
-      id: "5",
-      name: "Community Center",
-      projectIconType: "General",
-      projectIconColor: "Purple",
-      hasPercentage: true,
-      percentage: 15,
+      id: "task-5",
+      title: "Prepare presentation slides",
+      dueDate: addDays(new Date(), 4),
+      status: "pending",
+    },
+    {
+      id: "task-6",
+      title: "Weekly status update",
+      dueDate: addDays(new Date(), 7),
+      status: "pending",
+    },
+    {
+      id: "task-7",
+      title: "Contract review with legal",
+      dueDate: addDays(new Date(), 14),
+      status: "pending",
     },
   ];
 
-  const projectsWithFour = projectsWithFive.slice(0, 4);
-  const projectsWithThree = projectsWithFive.slice(0, 3);
-  const projectsWithTwo = projectsWithFive.slice(0, 2);
-  const projectsWithOne = projectsWithFive.slice(0, 1);
-  const projectsEmpty = [];
+  // Filter tasks based on selected period
+  const getFilteredTasks = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  // Mock handler functions
-  const handleAddProject = () => {
-    Alert.alert("Add Project", "This would open the add project screen");
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(today.getMonth() + 1);
+
+    switch (filterPeriod) {
+      case "Today":
+        return allTasks.filter((task) => {
+          const taskDate = new Date(task.dueDate);
+          taskDate.setHours(0, 0, 0, 0);
+          return taskDate.getTime() === today.getTime();
+        });
+
+      case "This week":
+        return allTasks.filter((task) => {
+          const taskDate = new Date(task.dueDate);
+          return taskDate >= today && taskDate < nextWeek;
+        });
+
+      case "This month":
+        return allTasks.filter((task) => {
+          const taskDate = new Date(task.dueDate);
+          return taskDate >= today && taskDate < nextMonth;
+        });
+
+      case "All":
+      default:
+        return allTasks;
+    }
   };
 
-  const handleViewAllProjects = () => {
-    Alert.alert(
-      "View All Projects",
-      "This would navigate to all projects screen"
-    );
+  // Handle filter change
+  const handleFilterChange = (period: TaskFilterPeriod) => {
+    setFilterPeriod(period);
   };
 
-  const handleProjectPress = (project: any) => {
-    Alert.alert(
-      "Project Selected",
-      `You selected the project: ${project.name}`
-    );
+  // Handle task press
+  const handleTaskPress = (taskId: string) => {
+    console.log(`Task pressed: ${taskId}`);
+    // In a real app, navigate to task details screen
   };
+
+  // Get filtered tasks
+  const filteredTasks = getFilteredTasks();
+
+  // Tasks subset for different examples
+  const tasks1 = filteredTasks.slice(0, 1);
+  const tasks2 = filteredTasks.slice(0, 2);
+  const tasks3 = filteredTasks.slice(0, 3);
+  const tasks4 = filteredTasks.slice(0, 4);
+  const tasks5 = filteredTasks.slice(0, 5);
+  const tasksEmpty: Task[] = [];
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
-      <Stack.Screen
-        options={{
-          title: "Project Widget Demo",
-          headerShown: true,
-        }}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <StatusBar style="dark" />
+
+      <TopNavigationBar
+        title="Widget Test"
+        showBack={true}
+        showNotification={false}
+        showProfile={false}
       />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Typography variant="headingMedium" style={styles.sectionTitle}>
-          ProjectWidget Variants
+      <ScrollView contentContainerStyle={styles.content}>
+        <Typography variant="h3" style={styles.sectionTitle}>
+          Upcoming Task Widget
         </Typography>
 
-        <Typography variant="bodyMedium" style={styles.sectionSubtitle}>
-          1. Five Projects (No Button)
+        <Typography variant="bodyMedium" style={styles.description}>
+          This widget shows upcoming tasks with filtering by time period. It can
+          display up to 5 tasks maximum.
         </Typography>
-        <ProjectWidget
-          projects={projectsWithFive}
-          onAddProject={handleAddProject}
-          onViewAllProjects={handleViewAllProjects}
-          onProjectPress={handleProjectPress}
-          style={styles.widget}
-        />
 
-        <Typography variant="bodyMedium" style={styles.sectionSubtitle}>
-          2. Four Projects (With Button)
-        </Typography>
-        <ProjectWidget
-          projects={projectsWithFour}
-          onAddProject={handleAddProject}
-          onViewAllProjects={handleViewAllProjects}
-          onProjectPress={handleProjectPress}
-          style={styles.widget}
-        />
+        <View style={styles.widgetContainer}>
+          <Typography variant="labelLarge" style={styles.widgetTitle}>
+            5 Tasks Example
+          </Typography>
+          <UpcomingTaskWidget
+            tasks={tasks5}
+            selectedPeriod={filterPeriod}
+            onFilterChange={handleFilterChange}
+            onTaskPress={handleTaskPress}
+            onViewAllPress={() => console.log("View all pressed")}
+          />
+        </View>
 
-        <Typography variant="bodyMedium" style={styles.sectionSubtitle}>
-          3. Three Projects (With Button)
-        </Typography>
-        <ProjectWidget
-          projects={projectsWithThree}
-          onAddProject={handleAddProject}
-          onViewAllProjects={handleViewAllProjects}
-          onProjectPress={handleProjectPress}
-          style={styles.widget}
-        />
+        <View style={styles.widgetContainer}>
+          <Typography variant="labelLarge" style={styles.widgetTitle}>
+            4 Tasks Example
+          </Typography>
+          <UpcomingTaskWidget
+            tasks={tasks4}
+            selectedPeriod={filterPeriod}
+            onFilterChange={handleFilterChange}
+            onTaskPress={handleTaskPress}
+            onViewAllPress={() => console.log("View all pressed")}
+          />
+        </View>
 
-        <Typography variant="bodyMedium" style={styles.sectionSubtitle}>
-          4. Two Projects (With Button)
-        </Typography>
-        <ProjectWidget
-          projects={projectsWithTwo}
-          onAddProject={handleAddProject}
-          onViewAllProjects={handleViewAllProjects}
-          onProjectPress={handleProjectPress}
-          style={styles.widget}
-        />
+        <View style={styles.widgetContainer}>
+          <Typography variant="labelLarge" style={styles.widgetTitle}>
+            3 Tasks Example
+          </Typography>
+          <UpcomingTaskWidget
+            tasks={tasks3}
+            selectedPeriod={filterPeriod}
+            onFilterChange={handleFilterChange}
+            onTaskPress={handleTaskPress}
+            onViewAllPress={() => console.log("View all pressed")}
+          />
+        </View>
 
-        <Typography variant="bodyMedium" style={styles.sectionSubtitle}>
-          5. One Project (With Button)
-        </Typography>
-        <ProjectWidget
-          projects={projectsWithOne}
-          onAddProject={handleAddProject}
-          onViewAllProjects={handleViewAllProjects}
-          onProjectPress={handleProjectPress}
-          style={styles.widget}
-        />
+        <View style={styles.widgetContainer}>
+          <Typography variant="labelLarge" style={styles.widgetTitle}>
+            2 Tasks Example
+          </Typography>
+          <UpcomingTaskWidget
+            tasks={tasks2}
+            selectedPeriod={filterPeriod}
+            onFilterChange={handleFilterChange}
+            onTaskPress={handleTaskPress}
+            onViewAllPress={() => console.log("View all pressed")}
+          />
+        </View>
 
-        <Typography variant="bodyMedium" style={styles.sectionSubtitle}>
-          6. Empty State (With Button)
-        </Typography>
-        <ProjectWidget
-          projects={projectsEmpty}
-          onAddProject={handleAddProject}
-          onViewAllProjects={handleViewAllProjects}
-          onProjectPress={handleProjectPress}
-          style={styles.widget}
-        />
+        <View style={styles.widgetContainer}>
+          <Typography variant="labelLarge" style={styles.widgetTitle}>
+            1 Task Example
+          </Typography>
+          <UpcomingTaskWidget
+            tasks={tasks1}
+            selectedPeriod={filterPeriod}
+            onFilterChange={handleFilterChange}
+            onTaskPress={handleTaskPress}
+            onViewAllPress={() => console.log("View all pressed")}
+          />
+        </View>
+
+        <View style={styles.widgetContainer}>
+          <Typography variant="labelLarge" style={styles.widgetTitle}>
+            Empty State Example
+          </Typography>
+          <UpcomingTaskWidget
+            tasks={tasksEmpty}
+            selectedPeriod={filterPeriod}
+            onFilterChange={handleFilterChange}
+            onTaskPress={handleTaskPress}
+            onViewAllPress={() => console.log("View all pressed")}
+          />
+        </View>
+
+        <View style={styles.widgetContainer}>
+          <Typography variant="labelLarge" style={styles.widgetTitle}>
+            Without Filter Example
+          </Typography>
+          <UpcomingTaskWidget
+            tasks={tasks3}
+            showFilter={false}
+            title="Simple Task List"
+            onTaskPress={handleTaskPress}
+          />
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
+  content: {
     padding: spacing.sm,
-    paddingBottom: spacing.xl * 2,
+    paddingBottom: spacing.xxxl,
   },
   sectionTitle: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     color: colors.text,
   },
-  sectionSubtitle: {
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
+  description: {
+    marginBottom: spacing.md,
     color: colors.textSecondary,
   },
-  widget: {
+  widgetContainer: {
     marginBottom: spacing.md,
   },
+  widgetTitle: {
+    marginBottom: spacing.xs,
+    color: colors.text,
+  },
 });
-
-export default ProjectWidgetTestScreen;

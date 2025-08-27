@@ -5,6 +5,8 @@ import { styles } from "./styles";
 import { WidgetTitle } from "../WidgetTitle";
 import { SwapItem } from "../SwapItem";
 import { Button } from "../Button";
+import { Typography } from "../Typography";
+import { colors } from "../../../theme";
 
 /**
  * Widget Organism Component
@@ -67,18 +69,27 @@ export const Widget: React.FC<WidgetProps> = ({
       />
 
       {/* Content Area - Directly in the widget */}
-      <View style={{
-        width: "100%",
-        minHeight: swapItemMinHeight || 60,
-      }}>
+      <View
+        style={{
+          width: "100%",
+          minHeight: swapItemMinHeight || 60,
+        }}
+      >
         {children || (
-          <View style={{
-            width: "100%",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-          }}>
-            {placeholderText}
+          <View
+            style={{
+              width: "100%",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+            }}
+          >
+            <Typography
+              variant="bodyMedium"
+              style={{ color: colors.textTertiary }}
+            >
+              {placeholderText}
+            </Typography>
           </View>
         )}
       </View>

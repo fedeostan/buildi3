@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Typography } from "../../components/ui";
+import { Typography, Icon } from "../../components/ui";
 import { colors } from "../../theme";
 import { View } from "react-native";
 
@@ -32,16 +32,12 @@ export default function TabsLayout() {
           title: "Home",
           tabBarIcon: ({ focused, color }) => (
             <View style={{ alignItems: "center", justifyContent: "center" }}>
-              <Typography
-                variant="h5"
-                style={{
-                  color,
-                  fontSize: focused ? 26 : 24,
-                  marginBottom: 2,
-                }}
-              >
-                🏠
-              </Typography>
+              <Icon
+                name="home"
+                customSize={focused ? 26 : 24}
+                color={color}
+                style={{ marginBottom: 2 }}
+              />
             </View>
           ),
           tabBarLabel: ({ focused, color }) => (
@@ -64,16 +60,12 @@ export default function TabsLayout() {
           title: "DevRes",
           tabBarIcon: ({ focused, color }) => (
             <View style={{ alignItems: "center", justifyContent: "center" }}>
-              <Typography
-                variant="h5"
-                style={{
-                  color,
-                  fontSize: focused ? 26 : 24,
-                  marginBottom: 2,
-                }}
-              >
-                🛍️
-              </Typography>
+              <Icon
+                name="shopping-bag"
+                customSize={focused ? 26 : 24}
+                color={color}
+                style={{ marginBottom: 2 }}
+              />
             </View>
           ),
           tabBarLabel: ({ focused, color }) => (

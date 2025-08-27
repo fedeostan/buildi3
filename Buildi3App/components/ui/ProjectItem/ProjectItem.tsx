@@ -130,14 +130,14 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
 
   const itemContent = (
     <>
-      <View style={styles.leftContainer}>
+      <View style={styles.leftContainer as any}>
         <View
           style={[
-            styles.iconContainer,
+            styles.iconContainer as any,
             {
               backgroundColor: svgIconSource
                 ? "transparent"
-                : styles.iconColors[iconColor],
+                : (styles.iconColors as any)[iconColor],
             },
           ]}
         >
@@ -153,13 +153,13 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
             <Icon name={iconName} color={iconTextColor} size="md" />
           )}
         </View>
-        <Typography variant="bodyMedium" style={styles.projectName}>
+        <Typography variant="bodyMedium" style={styles.projectName as any}>
           {projectName}
         </Typography>
       </View>
 
       {hasPercentage && (
-        <View style={styles.progressContainer}>
+        <View style={styles.progressContainer as any}>
           <CircularProgress
             value={percentage}
             radius={22} // This makes it exactly 44x44px total size
@@ -196,14 +196,14 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
   // If there's an onPress handler, make the item pressable
   return onPress ? (
     <TouchableOpacity
-      style={[styles.container, style]}
+      style={[styles.container as any, style]}
       onPress={onPress}
       activeOpacity={0.7}
     >
       {itemContent}
     </TouchableOpacity>
   ) : (
-    <View style={[styles.container, style]}>{itemContent}</View>
+    <View style={[styles.container as any, style]}>{itemContent}</View>
   );
 };
 

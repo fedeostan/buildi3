@@ -1,12 +1,14 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { colors, spacing } from "../../theme";
 import DashboardHeader from "../../components/ui/DashboardHeader/DashboardHeader";
 import { NextTaskWidget } from "../../components/ui/NextTaskWidget/NextTaskWidget";
 import ProjectWidget from "../../components/ui/ProjectWidget/ProjectWidget";
+import UpcomingTaskWidget from "../../components/ui/UpcomingTaskWidget";
 import type { Task } from "../../components/ui/NextTaskContainer/types";
+import type { TaskFilterPeriod } from "../../components/ui/UpcomingTaskWidget/types";
 
 /**
  * Home Screen - Main app dashboard
@@ -17,6 +19,8 @@ import type { Task } from "../../components/ui/NextTaskContainer/types";
  */
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const [filterPeriod, setFilterPeriod] =
+    React.useState<TaskFilterPeriod>("Today");
 
   const dynamicStyles = StyleSheet.create({
     container: {
@@ -46,8 +50,12 @@ export default function HomeScreen() {
         onNotificationPress={handleNotificationPress}
       />
 
-      {/* Main Content Area */}
-      <View style={styles.content}>
+      {/* Main Content Area - Scrollable */}
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Next Task Widget - Single widget that changes content based on hasTask */}
         <NextTaskWidget
           hasTask={true} // Change this to false to see "No upcoming tasks!" state
@@ -86,8 +94,37 @@ export default function HomeScreen() {
           ]}
           onAddProject={() => console.log("Add project pressed")}
           onViewAllProjects={() => console.log("View all projects pressed")}
+          style={{ marginBottom: spacing.md }}
         />
-      </View>
+
+        {/* Upcoming Tasks Widget */}
+        <UpcomingTaskWidget
+          tasks={[
+            {
+              id: "task-1",
+              title: "Review architectural plans and blueprints",
+              dueDate: new Date(),
+              status: "pending",
+            },
+            {
+              id: "task-2",
+              title: "Coordinate with electrical contractor",
+              dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+              status: "pending",
+            },
+            {
+              id: "task-3",
+              title: "Finalize material selections",
+              dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // Day after tomorrow
+              status: "pending",
+            },
+          ]}
+          selectedPeriod={filterPeriod}
+          onFilterChange={(period) => setFilterPeriod(period)}
+          onTaskPress={(taskId) => console.log(`Task pressed: ${taskId}`)}
+          onViewAllPress={() => console.log("View all tasks pressed")}
+        />
+      </ScrollView>
     </View>
   );
 }
@@ -101,5 +138,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     marginTop: spacing.lg, // Space between header and content
+  },
+
+  contentContainer: {
+    paddingBottom: spacing.xl, // Extra padding at the bottom for scrolling
   },
 });

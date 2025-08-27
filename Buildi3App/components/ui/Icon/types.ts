@@ -39,6 +39,8 @@ export type FeatherIconName =
   | "search"
   | "settings"
   | "share"
+  | "shopping-bag"
+  | "shopping-cart"
   | "star"
   | "trash"
   | "user"
