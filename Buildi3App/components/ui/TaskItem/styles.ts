@@ -11,8 +11,8 @@ export const styles = StyleSheet.create({
   container: {
     width: "100%",
     backgroundColor: colors.widgetContentArea,
-    borderRadius: 12,
-    paddingVertical: spacing.xs,
+    borderRadius: 16,
+    paddingVertical: spacing.sm, // Increased from spacing.xs to spacing.sm (16px) to match Figma
     paddingHorizontal: spacing.sm,
     flexDirection: "row",
     alignItems: "center",
@@ -29,7 +29,7 @@ export const styles = StyleSheet.create({
   // Task title style
   title: {
     color: colors.text,
-    marginBottom: 2, // Small space between title and date
+    marginBottom: spacing.xs / 2, // Increased from 2px to 4px (half of spacing.xs) for better visual hierarchy
   },
 
   // Due date style

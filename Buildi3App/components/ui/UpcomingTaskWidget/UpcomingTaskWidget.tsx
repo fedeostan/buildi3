@@ -1,11 +1,24 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
 import {
   View,
   TouchableOpacity,
-  Modal,
-  FlatList,
   Pressable,
+  StyleSheet,
+  Text,
 } from "react-native";
+import {
+  BottomSheetModal,
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UpcomingTaskWidgetProps, TaskFilterPeriod } from "./types";
 import { styles } from "./styles";
 import { Widget } from "../Widget";
@@ -53,8 +66,17 @@ const UpcomingTaskWidget: React.FC<UpcomingTaskWidgetProps> = ({
   widgetProps,
   style,
 }) => {
-  // State for filter modal visibility
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  // Ref for bottom sheet modal
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+  // Get safe area insets for proper bottom padding
+  const insets = useSafeAreaInsets();
+
+  // Bottom sheet configuration
+  const snapPoints = useMemo(() => ["40%"], []);
+
+  // State to track if bottom sheet is open
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
   // Filter options
   const filterPeriods: TaskFilterPeriod[] = [
@@ -66,16 +88,34 @@ const UpcomingTaskWidget: React.FC<UpcomingTaskWidgetProps> = ({
 
   // Handle filter button press
   const handleFilterPress = () => {
-    setFilterModalVisible(true);
+    bottomSheetModalRef.current?.present();
   };
 
   // Handle filter option selection
   const handleFilterSelect = (period: TaskFilterPeriod) => {
-    setFilterModalVisible(false);
+    bottomSheetModalRef.current?.dismiss();
     if (onFilterChange) {
       onFilterChange(period);
     }
   };
+
+  // Handle bottom sheet changes
+  const handleSheetChanges = useCallback((index: number) => {
+    setIsBottomSheetOpen(index >= 0);
+  }, []);
+
+  // Render backdrop for bottom sheet
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+      />
+    ),
+    []
+  );
 
   // Render the filter button for the widget title
   const renderFilterButton = () => {
@@ -96,74 +136,40 @@ const UpcomingTaskWidget: React.FC<UpcomingTaskWidgetProps> = ({
     );
   };
 
-  // Render the filter modal content
-  const renderFilterModal = () => {
+  // Render filter options for the bottom sheet
+  const renderFilterOptions = useCallback(() => {
     return (
-      <Modal
-        visible={filterModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setFilterModalVisible(false)}
+      <View
+        style={[
+          styles.bottomSheetContent,
+          { paddingBottom: Math.max(insets.bottom + 40, 70) },
+        ]}
       >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "white",
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              paddingBottom: 30,
-              maxHeight: "60%",
-            }}
+        {filterPeriods.map((period, index) => (
+          <Pressable
+            key={period}
+            style={[
+              styles.filterOption,
+              index === filterPeriods.length - 1 && styles.lastFilterOption,
+            ]}
+            onPress={() => handleFilterSelect(period)}
+            accessibilityLabel={`Select ${period}`}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: period === selectedPeriod }}
           >
-            <BottomSheetTopBar
-              cancelText="Close"
-              onCancel={() => setFilterModalVisible(false)}
-              segmentedOptions={[]}
-              selectedTabId=""
-              onTabSelect={() => {}}
-            />
-
-            <View style={styles.bottomSheetContent}>
-              <Typography variant="labelLarge" style={{ marginBottom: 16 }}>
-                Filter by period
-              </Typography>
-
-              {filterPeriods.map((period, index) => (
-                <Pressable
-                  key={period}
-                  style={[
-                    styles.filterOption,
-                    index === filterPeriods.length - 1 &&
-                      styles.lastFilterOption,
-                    period === selectedPeriod && styles.selectedFilterOption,
-                  ]}
-                  onPress={() => handleFilterSelect(period)}
-                  accessibilityLabel={`Filter by ${period}`}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: period === selectedPeriod }}
-                >
-                  <Typography
-                    variant="bodyMedium"
-                    style={{
-                      fontWeight: period === selectedPeriod ? "600" : "400",
-                    }}
-                  >
-                    {period}
-                  </Typography>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        </View>
-      </Modal>
+            <Typography variant="bodyMedium" style={styles.optionText}>
+              {period}
+            </Typography>
+            {period === selectedPeriod && (
+              <View style={styles.selectedIndicator}>
+                <Text style={styles.selectedCheckmark}>✓</Text>
+              </View>
+            )}
+          </Pressable>
+        ))}
+      </View>
     );
-  };
+  }, [filterPeriods, selectedPeriod, handleFilterSelect]);
 
   return (
     <>
@@ -172,13 +178,17 @@ const UpcomingTaskWidget: React.FC<UpcomingTaskWidgetProps> = ({
         actionText={selectedPeriod}
         onActionPress={showFilter ? handleFilterPress : undefined}
         hasAction={showFilter}
+        showActionIcon={showFilter}
+        actionIconName="chevron-down"
+        actionIconSize="sm"
+        actionIconColor="actionText"
         buttonText="View All Tasks"
         onButtonPress={onViewAllPress}
         showButton={Boolean(onViewAllPress)}
         titleProps={{
           actionStyle: { fontWeight: "500" },
         }}
-        style={[styles.container, style]}
+        style={StyleSheet.flatten([styles.container, style])}
         {...widgetProps}
       >
         <TaskList
@@ -189,8 +199,24 @@ const UpcomingTaskWidget: React.FC<UpcomingTaskWidgetProps> = ({
         />
       </Widget>
 
-      {/* Filter Modal */}
-      {renderFilterModal()}
+      {/* Filter Bottom Sheet */}
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={0}
+        snapPoints={snapPoints}
+        backdropComponent={renderBackdrop}
+        onChange={handleSheetChanges}
+        handleIndicatorStyle={styles.bottomSheetIndicator}
+        backgroundStyle={styles.bottomSheetBackground}
+        accessibilityLabel="Period of Time options"
+      >
+        <BottomSheetView style={styles.bottomSheetContainer}>
+          <View style={styles.bottomSheetHeader}>
+            <Text style={styles.bottomSheetTitle}>Select Period</Text>
+          </View>
+          {renderFilterOptions()}
+        </BottomSheetView>
+      </BottomSheetModal>
     </>
   );
 };

@@ -1,4 +1,6 @@
 import { TextStyle, ViewStyle } from "react-native";
+import { FeatherIconName, IconSize } from "../Icon/types";
+import { ColorName } from "../../../theme";
 
 /**
  * Props for WidgetTitle molecule component
@@ -16,6 +18,18 @@ export interface WidgetTitleProps {
 
   /** Whether to show the action (matches Figma hasAction prop) */
   hasAction?: boolean;
+
+  /** Whether to show icon next to action text */
+  showActionIcon?: boolean;
+
+  /** Icon name for the action (Feather icon) */
+  actionIconName?: FeatherIconName;
+
+  /** Size of the action icon */
+  actionIconSize?: IconSize;
+
+  /** Color of the action icon */
+  actionIconColor?: ColorName | string;
 
   /** Custom styles for the container */
   style?: ViewStyle;

@@ -2,6 +2,8 @@ import { ReactNode } from "react";
 import { ViewStyle } from "react-native";
 import { WidgetTitleProps } from "../WidgetTitle/types";
 import { SwapItemProps } from "../SwapItem/types";
+import { FeatherIconName, IconSize } from "../Icon/types";
+import { ColorName } from "../../../theme";
 
 /**
  * Props for Widget organism component
@@ -19,6 +21,18 @@ export interface WidgetProps {
 
   /** Whether to show the title action */
   hasAction?: boolean;
+
+  /** Whether to show icon next to action text */
+  showActionIcon?: boolean;
+
+  /** Icon name for the action (Feather icon) */
+  actionIconName?: FeatherIconName;
+
+  /** Size of the action icon */
+  actionIconSize?: IconSize;
+
+  /** Color of the action icon */
+  actionIconColor?: ColorName | string;
 
   /** Content to display in the swap area */
   children?: ReactNode;

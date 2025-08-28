@@ -26,12 +26,23 @@ export const styles = StyleSheet.create({
   actionContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4, // Small gap for potential dropdown icon
+  },
+
+  // Action content container - holds text and icon
+  actionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4, // Gap between text and icon
   },
 
   // Action text styling
   actionText: {
     // Typography handled by Typography component
     // Color will be set to actionText from theme
+  },
+
+  // Action icon styling
+  actionIcon: {
+    marginLeft: 4, // Space between text and icon
   },
 });

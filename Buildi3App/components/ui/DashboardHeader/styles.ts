@@ -21,6 +21,7 @@ export const styles = StyleSheet.create({
     // No horizontal padding - parent screen handles this
     paddingVertical: componentSpacing.dashboardHeader.verticalPadding, // 16px
     backgroundColor: colors.background, // Background matches screen
+    overflow: "visible", // Ensure notification badge is visible
   },
 
   // Greeting text container - center content with proper spacing

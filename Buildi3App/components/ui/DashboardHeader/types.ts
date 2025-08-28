@@ -4,7 +4,13 @@
  * Atomic Design - Organism component types
  */
 
+import { StyleProp, ViewStyle } from "react-native";
+
 export interface DashboardHeaderProps {
+  /**
+   * Additional style for the container
+   */
+  style?: StyleProp<ViewStyle>;
   /**
    * User name for greeting text
    * Default: "Federico"

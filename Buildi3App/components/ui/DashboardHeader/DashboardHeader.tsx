@@ -32,6 +32,7 @@ import type { DashboardHeaderProps } from "./types";
  * @param onNotificationPress - Callback when notification icon is pressed
  */
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  style,
   userName = "Federico Ostan",
   date,
   hasNotifications = false,
@@ -91,7 +92,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const initials = extractInitials(userName);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {/* Left Side: Profile Icon with dynamic initials */}
       <ProfileIcon
         size="Large"

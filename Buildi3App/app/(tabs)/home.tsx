@@ -25,8 +25,8 @@ export default function HomeScreen() {
   const dynamicStyles = StyleSheet.create({
     container: {
       paddingHorizontal: spacing.sm, // 16px consistent horizontal padding
-      paddingTop: Math.max(insets.top, 20) + spacing.lg, // Safe area + 32px base
-      paddingBottom: Math.max(insets.bottom, 20) + spacing.sm, // Safe area + 16px base
+      paddingTop: Math.max(insets.top, 20) + spacing.sm, // Safe area + 32px base
+      // Remove paddingBottom to allow content to scroll behind the tab bar
     },
   });
 
@@ -41,21 +41,21 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, dynamicStyles.container]}>
-      {/* Dashboard Header with dynamic greeting and navigation */}
-      <DashboardHeader
-        userName="Federico Ostan" // This will come from user context/auth later
-        hasNotifications={true}
-        notificationCount={3}
-        onProfilePress={handleProfilePress}
-        onNotificationPress={handleNotificationPress}
-      />
-
-      {/* Main Content Area - Scrollable */}
+      {/* Main Content Area - Scrollable, including header */}
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Dashboard Header with dynamic greeting and navigation */}
+        <DashboardHeader
+          userName="Federico Ostan" // This will come from user context/auth later
+          hasNotifications={true}
+          notificationCount={3}
+          onProfilePress={handleProfilePress}
+          onNotificationPress={handleNotificationPress}
+          style={{ marginBottom: spacing.sm }} // Add spacing below header
+        />
         {/* Next Task Widget - Single widget that changes content based on hasTask */}
         <NextTaskWidget
           hasTask={true} // Change this to false to see "No upcoming tasks!" state
@@ -133,14 +133,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    overflow: "visible",
   },
 
   content: {
     flex: 1,
-    marginTop: spacing.lg, // Space between header and content
+    overflow: "visible",
   },
 
   contentContainer: {
-    paddingBottom: spacing.xl, // Extra padding at the bottom for scrolling
+    paddingBottom: spacing.layout + spacing.md, // 80px + 24px = 104px padding to ensure content is visible above the tab bar
+    overflow: "visible",
   },
 });

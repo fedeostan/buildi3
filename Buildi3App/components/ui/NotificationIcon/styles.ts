@@ -23,6 +23,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative", // For absolute badge positioning
+    overflow: "visible", // Ensure the badge isn't clipped
   },
 
   // Notification badge - red circle

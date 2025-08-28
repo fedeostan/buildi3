@@ -30,6 +30,10 @@ import { colors } from "../../../theme";
  * @param actionText - Optional action text in the title
  * @param onActionPress - Callback for title action
  * @param hasAction - Whether to show title action
+ * @param showActionIcon - Whether to show icon next to action text
+ * @param actionIconName - Icon name for the action (Feather icon)
+ * @param actionIconSize - Size of the action icon
+ * @param actionIconColor - Color of the action icon
  * @param children - Content for the swap area
  * @param placeholderText - Placeholder when swap area is empty
  * @param buttonText - Text for the bottom button
@@ -46,6 +50,10 @@ export const Widget: React.FC<WidgetProps> = ({
   actionText = "Action",
   onActionPress,
   hasAction = true,
+  showActionIcon = false,
+  actionIconName = "chevron-down",
+  actionIconSize = "sm",
+  actionIconColor = "actionText",
   children,
   placeholderText = "Add content here",
   buttonText = "Button",
@@ -65,6 +73,10 @@ export const Widget: React.FC<WidgetProps> = ({
         actionText={actionText}
         onActionPress={onActionPress}
         hasAction={hasAction}
+        showActionIcon={showActionIcon}
+        actionIconName={actionIconName}
+        actionIconSize={actionIconSize}
+        actionIconColor={actionIconColor}
         {...titleProps}
       />
 
