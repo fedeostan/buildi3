@@ -24,12 +24,13 @@ export const styles = StyleSheet.create({
 
   // Icon container styling
   iconContainer: {
-    width: 40, // Increased to match Figma
-    height: 40, // Increased to match Figma
+    width: 44, // Adjusted to 44px to match specs
+    height: 44, // Adjusted to 44px to match specs
     borderRadius: 12, // 12px border radius (from Figma)
     justifyContent: "center",
     alignItems: "center",
-    padding: 8, // Adjusted padding
+    padding: 0, // Removed padding as SVGs are sized directly
+    overflow: "hidden", // Ensure content stays within bounds
   },
 
   // Project name text styling
@@ -54,12 +55,12 @@ export const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // Icon color mapping
+  // Icon color mapping - using as any to avoid TypeScript issues
   iconColors: {
     primaryLight: colors.primaryLight, // Light blue from theme
     secondaryLight: colors.background, // Light secondary blue
     success: colors.success, // Green
     warning: colors.warning, // Yellow
     error: colors.error, // Red
-  },
+  } as any,
 });

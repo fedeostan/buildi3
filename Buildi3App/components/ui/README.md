@@ -54,6 +54,7 @@ import { Foo } from "../../ui";
 
 - Uses `colors.*` and `spacing.*` tokens only.
 - Composes `Typography`/`Icon`/`Button` as needed.
+- SVG icons are handled as React components using react-native-svg-transformer.
 
 ### Do/Don’t
 
