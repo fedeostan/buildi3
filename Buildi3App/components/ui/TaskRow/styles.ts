@@ -3,7 +3,6 @@ import { colors, spacing } from "../../../theme";
 
 export const styles = StyleSheet.create({
   container: {
-    // No background per Figma list style
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     flexDirection: "row",

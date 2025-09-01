@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, View } from "react-native";
 import { styles } from "./styles";
-import { TaskRowProps } from "./types";
+import { TaskRowProps, TaskStage } from "./types";
 import { Typography } from "../Typography";
 import { DateTag, getTagText } from "../Tag";
 import Icon from "../Icon";
@@ -20,13 +20,20 @@ const TaskRow: React.FC<TaskRowProps> = ({
   title,
   projectName,
   dueDate,
+  stage = "not-started",
   isCompleted = false,
   onPress,
   onToggleComplete,
+  onStageChange,
   accessibilityLabel,
   style,
   isLastItem = false,
 }) => {
+  // Derive completion state from stage
+  const taskCompleted = stage === "completed" || isCompleted;
+  
+  // Always use check-circle icon, only color changes based on completion
+  const iconColor = taskCompleted ? "green10" : "textTertiary";
   return (
     <View>
       <Pressable
@@ -43,16 +50,25 @@ const TaskRow: React.FC<TaskRowProps> = ({
       >
         <Pressable
           style={styles.checkButton}
-          onPress={() => onToggleComplete && onToggleComplete(id, !isCompleted)}
+          onPress={() => {
+            // Handle both legacy onToggleComplete and new onStageChange
+            if (onToggleComplete) {
+              onToggleComplete(id, !taskCompleted);
+            }
+            if (onStageChange) {
+              const nextStage: TaskStage = stage === "completed" ? "not-started" : "completed";
+              onStageChange(id, nextStage);
+            }
+          }}
           accessibilityRole="button"
           accessibilityLabel={
-            isCompleted ? "Mark as incomplete" : "Mark as complete"
+            taskCompleted ? "Mark as incomplete" : "Mark as complete"
           }
         >
           <Icon
             name="check-circle"
             size="md"
-            color={isCompleted ? "green10" : "textTertiary"}
+            color={iconColor}
             style={{ marginLeft: -spacing.xs / 4 }}
           />
         </Pressable>

@@ -66,6 +66,14 @@ export type {
 } from "./MenuBottomSheet";
 export type { GeneralHeaderProps } from "./GeneralHeader";
 
+// Task Section component (Atomic Design - Organism)
+export { default as TaskSection } from "./TaskSection";
+export type { TaskSectionProps } from "./TaskSection";
+
+// Task Actions Bottom Sheet (Atomic Design - Organism)
+export { default as TaskActionsBottomSheet } from "./TaskActionsBottomSheet";
+export type { TaskActionsBottomSheetProps, TaskAction } from "./TaskActionsBottomSheet";
+
 // Note: Import types directly from component folders when needed:
 // import type { TypographyProps } from './components/ui/Typography';
 // import type { ButtonProps } from './components/ui/Button';

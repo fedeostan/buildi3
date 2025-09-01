@@ -8,7 +8,9 @@ import {
   GeneralHeader,
   MenuSection,
   TaskRow,
+  TaskSection,
 } from "../../components/ui";
+import type { TaskStage } from "../../components/ui/TaskRow/types";
 
 /**
  * Tasks Screen - Task management and tracking
@@ -20,44 +22,73 @@ export default function TasksScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  // Demo data with local state to visualize completion toggles
-  const [rows, setRows] = React.useState([
+  // Task data with stages matching Figma design
+  const [tasks, setTasks] = React.useState([
     {
       id: "1",
       title: "Design onboarding flow",
       projectName: "New App",
-      dueDate: new Date(),
+      dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
+      stage: "not-started" as TaskStage,
       isCompleted: false,
     },
     {
       id: "2",
-      title: "Fix login bug",
+      title: "Fix login bug", 
       projectName: "Auth",
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+      stage: "not-started" as TaskStage,
       isCompleted: false,
     },
     {
       id: "3",
-      title: "Prepare sprint report",
-      projectName: "Ops",
-      dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      isCompleted: true,
+      title: "Create wireframes",
+      projectName: "New App", 
+      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 11 Sep (future)
+      stage: "not-started" as TaskStage,
+      isCompleted: false,
     },
     {
       id: "4",
       title: "Update dependencies",
       projectName: "Mobile",
-      dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday  
+      stage: "in-progress" as TaskStage,
       isCompleted: false,
     },
     {
       id: "5",
       title: "Call client to confirm scope",
       projectName: "Acme Co",
-      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+      stage: "in-progress" as TaskStage,
       isCompleted: false,
     },
+    {
+      id: "6",
+      title: "Review final designs",
+      projectName: "Mobile",
+      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 11 Sep
+      stage: "in-progress" as TaskStage,
+      isCompleted: false,
+    },
+    {
+      id: "7",
+      title: "Prepare sprint report",
+      projectName: "Ops", 
+      dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
+      stage: "completed" as TaskStage,
+      isCompleted: true,
+    },
   ]);
+
+  // Section expansion state
+  const [expandedSections, setExpandedSections] = React.useState<Record<TaskStage, boolean>>({
+    "not-started": true,
+    "in-progress": true, 
+    "completed": false,
+    "blocked": false,
+  });
 
   // Context-specific menu options for Tasks screen
   const tasksMenuSections: MenuSection[] = [
@@ -109,8 +140,42 @@ export default function TasksScreen() {
     }
   };
 
-  // Handle task row press - navigate to task detail screen
-  const handleTaskPress = (task: typeof rows[0]) => {
+  // Handle section toggle
+  const handleToggleSection = (stage: TaskStage) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [stage]: !prev[stage],
+    }));
+  };
+
+  // Handle task stage change
+  const handleTaskStageChange = (taskId: string, newStage: TaskStage) => {
+    setTasks(prev =>
+      prev.map(task =>
+        task.id === taskId
+          ? { ...task, stage: newStage, isCompleted: newStage === "completed" }
+          : task
+      )
+    );
+  };
+
+  // Handle task completion toggle (legacy support)
+  const handleTaskToggleComplete = (taskId: string, completed: boolean) => {
+    setTasks(prev =>
+      prev.map(task =>
+        task.id === taskId
+          ? { 
+              ...task, 
+              isCompleted: completed, 
+              stage: completed ? "completed" : "not-started" as TaskStage 
+            }
+          : task
+      )
+    );
+  };
+
+  // Handle task press - navigate to task detail screen
+  const handleTaskPress = (task: any) => {
     router.push({
       pathname: "/task-detail",
       params: {
@@ -119,9 +184,40 @@ export default function TasksScreen() {
         projectName: task.projectName,
         dueDate: task.dueDate.toISOString(),
         isCompleted: task.isCompleted.toString(),
+        stage: task.stage,
       },
     });
   };
+
+  // Organize tasks by stage and sort by due date (closest first)
+  const tasksByStage = React.useMemo(() => {
+    const stages: Record<TaskStage, typeof tasks> = {
+      "not-started": [],
+      "in-progress": [],
+      "completed": [],
+      "blocked": [],
+    };
+
+    tasks.forEach(task => {
+      stages[task.stage].push(task);
+    });
+
+    // Sort each stage by due date (closest first)
+    Object.keys(stages).forEach(stageKey => {
+      const stage = stageKey as TaskStage;
+      stages[stage].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+    });
+
+    return stages;
+  }, [tasks]);
+
+  // Stage configuration matching Figma
+  const stageConfig = [
+    { stage: "not-started" as TaskStage, title: "Not started" },
+    { stage: "in-progress" as TaskStage, title: "In progress" },
+    { stage: "completed" as TaskStage, title: "Completed" },
+    { stage: "blocked" as TaskStage, title: "Blocked" },
+  ];
 
   const dynamicStyles = StyleSheet.create({
     container: {
@@ -144,32 +240,21 @@ export default function TasksScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Preview of TaskRow variants with dummy data */}
-        <View style={styles.previewSection}>
-          <Typography variant="h5" style={styles.previewTitle}>
-            Task Variants (Preview)
-          </Typography>
-          <View>
-            {rows.map((row, index) => (
-              <TaskRow
-                key={row.id}
-                id={row.id}
-                title={row.title}
-                projectName={row.projectName}
-                dueDate={row.dueDate}
-                isCompleted={row.isCompleted}
-                isLastItem={index === rows.length - 1}
-                onToggleComplete={(id, next) =>
-                  setRows((prev) =>
-                    prev.map((r) =>
-                      r.id === id ? { ...r, isCompleted: next } : r
-                    )
-                  )
-                }
-                onPress={() => handleTaskPress(row)}
-              />
-            ))}
-          </View>
+        {/* Task Organization by Stage */}
+        <View style={styles.taskOrganization}>
+          {stageConfig.map((config) => (
+            <TaskSection
+              key={config.stage}
+              title={config.title}
+              stage={config.stage}
+              tasks={tasksByStage[config.stage]}
+              isExpanded={expandedSections[config.stage]}
+              onToggleExpanded={handleToggleSection}
+              onTaskPress={handleTaskPress}
+              onTaskStageChange={handleTaskStageChange}
+              onTaskToggleComplete={handleTaskToggleComplete}
+            />
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -189,11 +274,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.sm, // Add horizontal padding for content
   },
-  previewSection: {
-    marginTop: spacing.lg,
-  },
-  previewTitle: {
-    color: colors.text,
-    marginBottom: spacing.sm,
+  taskOrganization: {
+    marginTop: spacing.sm,
   },
 });

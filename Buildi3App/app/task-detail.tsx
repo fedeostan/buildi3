@@ -11,6 +11,7 @@ import {
   Icon,
   TaskRow,
   Widget,
+  TaskActionsBottomSheet,
 } from "../components/ui";
 import { DateTag } from "../components/ui/Tag";
 
@@ -45,6 +46,7 @@ export default function TaskDetailScreen() {
   const [isCompleted, setIsCompleted] = useState(params.isCompleted === "true");
   const [description, setDescription] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
   const dueDate = params.dueDate ? new Date(params.dueDate) : new Date();
 
   // Demo subtasks
@@ -101,6 +103,44 @@ export default function TaskDetailScreen() {
     setIsCompleted(!isCompleted);
   };
 
+  const handleMoreOptions = () => {
+    setShowActionsMenu(true);
+  };
+
+  const handleActionSelect = (actionId: string) => {
+    console.log("Action selected:", actionId);
+    // TODO: Implement specific actions
+    switch (actionId) {
+      case "manage-projects":
+        // Open project management
+        break;
+      case "add-tags":
+        // Open tag selection
+        break;
+      case "make-subtask":
+        // Show parent task selection
+        break;
+      case "mark-as":
+        // Show status selection
+        break;
+      case "create-followup":
+        // Create follow-up task
+        break;
+      case "make-dependent":
+        // Show dependency selection
+        break;
+      case "share-task":
+        // Open sharing options
+        break;
+      case "leave-task":
+        // Confirm leaving task
+        break;
+      case "delete-task":
+        // Confirm deletion
+        break;
+    }
+  };
+
   const handleAddSubtask = () => {
     if (newSubtask.trim()) {
       const newSubtaskItem = {
@@ -137,16 +177,16 @@ export default function TaskDetailScreen() {
           >
             <Icon name="chevron-left" size="md" color="text" />
           </TouchableOpacity>
-          
+
           <View style={styles.titleContainer}>
             <Typography variant="h5" style={styles.headerTitle}>
               Task Details
             </Typography>
           </View>
-          
+
           <TouchableOpacity
             style={styles.moreButton}
-            onPress={() => console.log("More options pressed")}
+            onPress={handleMoreOptions}
             accessibilityRole="button"
             accessibilityLabel="More options"
           >
@@ -163,7 +203,7 @@ export default function TaskDetailScreen() {
         {/* Task Title Section */}
         <View style={styles.section}>
           <View style={styles.titleHeader}>
-            <View style={styles.titleContainer}>
+            <View style={styles.titleInputContainer}>
               <Input
                 label="Task Title"
                 value={taskTitle}
@@ -345,6 +385,14 @@ export default function TaskDetailScreen() {
           />
         </View>
       </ScrollView>
+
+      {/* Task Actions Bottom Sheet */}
+      <TaskActionsBottomSheet
+        isVisible={showActionsMenu}
+        onClose={() => setShowActionsMenu(false)}
+        onActionSelect={handleActionSelect}
+        taskId={taskId}
+      />
     </View>
   );
 }
@@ -404,7 +452,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.sm,
   },
-  titleContainer: {
+  titleInputContainer: {
     flex: 1,
   },
   titleInput: {
