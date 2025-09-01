@@ -29,6 +29,8 @@ export { default as ProjectWidget } from "./ProjectWidget";
 export { default as TaskItem } from "./TaskItem";
 export { default as TaskList } from "./TaskList";
 export { default as UpcomingTaskWidget } from "./UpcomingTaskWidget";
+export { default as TaskRow } from "./TaskRow";
+export type { TaskRowProps } from "./TaskRow";
 
 // Input system (React Native best practices with Figma design)
 export { default as Input } from "./Input";
@@ -47,6 +49,22 @@ export { default as PhotosGrid } from "./PhotosGrid";
 export { default as FilesView } from "./FilesView";
 export { default as ImagePreview } from "./ImagePreview";
 export { default as MediaUploadBottomSheet } from "./MediaUploadBottomSheet";
+
+// Navigation components (Atomic Design - Organisms)
+export { default as BottomTabBar } from "./BottomTabBar";
+export type { BottomTabBarProps, TabBarItem } from "./BottomTabBar";
+
+// Menu components (Atomic Design - Atoms & Organisms)
+export { default as MenuButton } from "./MenuButton";
+export { default as MenuBottomSheet } from "./MenuBottomSheet";
+export { default as GeneralHeader } from "./GeneralHeader";
+export type { MenuButtonProps } from "./MenuButton";
+export type {
+  MenuOption,
+  MenuSection,
+  MenuBottomSheetProps,
+} from "./MenuBottomSheet";
+export type { GeneralHeaderProps } from "./GeneralHeader";
 
 // Note: Import types directly from component folders when needed:
 // import type { TypographyProps } from './components/ui/Typography';

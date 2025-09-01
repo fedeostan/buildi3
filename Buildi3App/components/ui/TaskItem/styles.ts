@@ -1,59 +1,80 @@
 import { StyleSheet } from "react-native";
-import { colors } from "../../../theme";
-import { spacing } from "../../../theme";
+import { colors, spacing } from "../../../theme";
 
-/**
- * Styles for the TaskItem component
- * Based on Figma Design System
- */
 export const styles = StyleSheet.create({
-  // Main container
   container: {
-    width: "100%",
-    backgroundColor: colors.widgetContentArea,
-    borderRadius: 16,
-    paddingVertical: spacing.sm, // Increased from spacing.xs to spacing.sm (16px) to match Figma
-    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.backgroundSecondary, // White background
+    borderRadius: 12,
+    paddingHorizontal: spacing.sm, // 16px horizontal padding
+    paddingVertical: spacing.sm, // 16px vertical padding
+    marginBottom: spacing.xs, // 8px margin between items
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.xs,
+    minHeight: 72, // Minimum height for proper content spacing
+    // Shadow for depth
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1, // Android shadow
   },
-
-  // Left content container (title, etc)
+  containerDragging: {
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+    transform: [{ scale: 1.02 }], // Slightly larger when dragging
+  },
+  checkboxContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22, // Circular
+    backgroundColor: colors.backgroundTertiary,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm, // 16px spacing from content
+  },
+  checkboxContainerCompleted: {
+    backgroundColor: colors.success,
+    borderColor: colors.success,
+  },
+  checkboxIcon: {
+    // Icon styling handled by Icon component
+  },
   contentContainer: {
     flex: 1,
-    flexDirection: "column",
+    paddingRight: spacing.xs, // Small spacing before tag
   },
-
-  // Task title style
-  title: {
+  taskTitle: {
+    fontSize: 16,
+    fontWeight: "500", // Medium weight
     color: colors.text,
-    marginBottom: spacing.xs / 2, // Increased from 2px to 4px (half of spacing.xs) for better visual hierarchy
+    lineHeight: 20,
+    marginBottom: 2,
   },
-
-  // Due date style
-  dueDate: {
-    color: colors.textTertiary,
+  taskTitleCompleted: {
+    textDecorationLine: "line-through",
+    color: colors.textSecondary,
+    opacity: 0.7,
   },
-
-  // Right side content (icon)
-  iconContainer: {
-    paddingLeft: spacing.sm,
+  taskDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
-
-  // For highlighting the last item
-  lastItem: {
-    marginBottom: 0,
+  taskDescriptionCompleted: {
+    opacity: 0.5,
   },
-
-  // For different status styles
-  completed: {
-    opacity: 0.6,
+  tagContainer: {
+    // Tag styling handled by Tag component
   },
-
-  // For active state styling when pressed
-  pressed: {
-    backgroundColor: colors.hover,
+  // Pressed state styles
+  containerPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
   },
 });

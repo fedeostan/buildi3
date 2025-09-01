@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo $SHELL)",
+      "Bash(npx expo:*)",
+      "Bash(buildi-setup)",
+      "Bash(npm install)",
+      "WebSearch",
+      "mcp__figma-dev-mode-mcp-server__get_code",
+      "mcp__figma-dev-mode-mcp-server__get_image",
+      "Bash(ls:*)",
+      "mcp__context7__resolve-library-id",
+      "WebFetch(domain:feathericons.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npx tsc:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/federicoostan"
+    ]
+  }
+}

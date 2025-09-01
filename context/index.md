@@ -4,6 +4,8 @@ Use this list to locate relevant learnings before starting work. Group entries b
 
 #### Design system
 
+- [General Header Menu System](./2025-08-31__general-header-menu-system.md) - Reusable header with context-specific menu system using bottom sheets
+- [Bottom Navigation Figma Implementation](./2025-08-31__bottom-navigation-figma-design-system.md) - Reusable bottom navigation with design tokens and atomic design
 - [Project Item SVG Icons](./2024-05-28__project-item-svg-icon-implementation.md) - SVG icon implementation for project items
 - [Upcoming Task Widget](./2023-08-20__upcoming-task-widget-implementation.md) - Task widget with filtering functionality
 - [TaskItem Padding Enhancement](./2024-07-01__task-item-padding-enhancement.md) - Improved padding and spacing in TaskItem component

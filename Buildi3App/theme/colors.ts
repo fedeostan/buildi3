@@ -64,6 +64,33 @@ const STATUS = {
   error: "#F44336", // Error red
 } as const;
 
+// Design System Reds (from Figma)
+const RED = {
+  10: "#f44336",
+  14: "#731E17",
+} as const;
+const RED_ALPHA = {
+  10: "#f443361a", // 10% alpha of #F44336
+} as const;
+
+// Design System Yellows (from Figma)
+const YELLOW = {
+  10: "#ffc107",
+  14: "#543F02",
+} as const;
+const YELLOW_ALPHA = {
+  10: "#ffc1071a", // 10% alpha of #FFC107
+} as const;
+
+// Design System Greens (from Figma)
+const GREEN = {
+  10: "#4caf50",
+  14: "#204E22",
+} as const;
+const GREEN_ALPHA = {
+  10: "#4caf501a", // 10% alpha of #4CAF50
+} as const;
+
 // Input Colors (from Figma Input Field design)
 const INPUT = {
   focusBackground: "#E8EBF2", // Input focus background from Figma
@@ -115,6 +142,32 @@ export const colors = {
   segmentedControlSelectedText: PRIMARY_BLUE[900], // Selected tab text (#001848)
   segmentedControlUnselectedText: "#646466", // Unselected tab text from Figma
   bottomSheetBackground: SECONDARY_BLUE[100], // Bottom sheet background (#F2F3F7)
+
+  // Tab Navigation Colors (from Figma NavBar design)
+  tabBarBackground: GRAY[0], // Widget/Background from Figma - white
+  tabBarBorder: GRAY[100], // Widget/Border from Figma - #EDEEF2
+  tabBarActiveText: PRIMARY_BLUE[900], // Icon/Default from Figma - #001848
+  tabBarInactiveText: "#646466", // Icon/Dimmed from Figma - specific gray
+
+  // Tag Colors (aligned with Figma variables)
+  // Backgrounds use 10% alpha of base colors; text uses deep shade tokens
+  tagRedBackground: RED_ALPHA[10], // Colors/Red/Alpha/10/10
+  tagRedText: RED[14], // Colors/Red/14
+  tagYellowBackground: YELLOW_ALPHA[10], // Colors/Yellow/Alpha/10/10
+  tagYellowText: YELLOW[14], // Colors/Yellow/14
+  tagGreenBackground: GREEN_ALPHA[10], // Colors/Green/Alpha/10/10
+  tagGreenText: GREEN[14], // Colors/Green/14
+
+  // Expose base DS colors for reuse
+  red10: STATUS.error, // #F44336
+  red14: RED[14],
+  redAlpha10: RED_ALPHA[10],
+  yellow10: STATUS.warning, // #FFC107
+  yellow14: YELLOW[14],
+  yellowAlpha10: YELLOW_ALPHA[10],
+  green10: STATUS.success, // #4CAF50
+  green14: GREEN[14],
+  greenAlpha10: GREEN_ALPHA[10],
 
   // Status Colors
   success: STATUS.success,

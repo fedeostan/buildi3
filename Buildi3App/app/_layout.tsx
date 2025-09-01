@@ -106,6 +106,15 @@ export default function RootLayout() {
               presentation: "modal", // Present as modal overlay
             }}
           />
+
+          {/* Task Detail - Modal presentation for editing tasks */}
+          <Stack.Screen
+            name="task-detail"
+            options={{
+              title: "Task Details",
+              presentation: "modal", // Present as modal overlay
+            }}
+          />
         </Stack>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

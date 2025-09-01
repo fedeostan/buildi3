@@ -1,28 +1,39 @@
 import { ViewStyle } from "react-native";
 
-/**
- * Props for the TaskItem component
- * A clickable component that displays task information
- */
-export interface TaskItemProps {
-  /** Unique identifier for the task */
+export interface Task {
+  /** Unique task identifier */
   id: string;
-
-  /** Title/description of the task */
+  /** Task title */
   title: string;
+  /** Task description or subtitle */
+  description?: string;
+  /** Task due date */
+  dueDate: Date;
+  /** Whether task is completed */
+  isCompleted: boolean;
+  /** Task priority level */
+  priority?: "low" | "medium" | "high";
+  /** Project or category ID */
+  projectId?: string;
+  /** Tags or labels */
+  tags?: string[];
+}
 
-  /** Due date of the task (can be displayed as relative time) */
-  dueDate: Date | string;
-
-  /** Status of task (completed, pending, etc.) */
-  status?: "completed" | "pending" | "in-progress";
-
-  /** Function called when the task item is pressed */
-  onPress?: () => void;
-
-  /** Whether the task item is the last in the list (for styling purposes) */
-  isLastItem?: boolean;
-
-  /** Custom styles to apply to the container */
+export interface TaskItemProps {
+  /** Task data */
+  task: Task;
+  /** Callback when task completion status is toggled */
+  onToggleComplete?: (taskId: string) => void;
+  /** Callback when task is pressed (for navigation) */
+  onTaskPress?: (task: Task) => void;
+  /** Callback when task is long pressed (for drag & drop) */
+  onTaskLongPress?: (task: Task) => void;
+  /** Whether the task item is currently being dragged */
+  isDragging?: boolean;
+  /** Custom container style */
   style?: ViewStyle;
+  /** Whether to show the drag handle */
+  showDragHandle?: boolean;
+  /** Accessibility label override */
+  accessibilityLabel?: string;
 }

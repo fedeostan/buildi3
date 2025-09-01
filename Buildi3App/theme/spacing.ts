@@ -75,6 +75,15 @@ export const componentSpacing = {
     gap: spacing.sm, // 16px between elements
     marginBottom: spacing.md, // 24px bottom margin
   },
+
+  // Tab Bar spacing (from Figma NavBar design)
+  tabBar: {
+    paddingTop: spacing.xs + 4, // 12px from Figma (Spacing/ssm)
+    paddingBottom: spacing.lg, // 32px from Figma (Spacing/xl)
+    height: 90, // Total height to accommodate content and padding
+    iconSize: 24, // Consistent 24px icons from Figma
+    gap: spacing.xs / 4, // 2px gap between icon and label
+  },
 } as const;
 
 // =============================================================================

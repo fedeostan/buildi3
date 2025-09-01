@@ -47,11 +47,18 @@ export type FeatherIconName =
   | "users"
   | "x"
   | "check-circle"
+  | "check-square"
+  | "message-square"
   | "alert-triangle"
   | "help-circle"
   | "lock"
   | "unlock"
-  | "upload";
+  | "upload"
+  | "filter"
+  | "list"
+  | "folder"
+  | "folder-plus"
+  | "bell-off";
 
 export interface IconProps {
   /** The Feather icon name to display */
