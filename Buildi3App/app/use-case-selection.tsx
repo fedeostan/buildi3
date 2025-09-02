@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import {
@@ -10,6 +10,7 @@ import {
 } from "../components/ui";
 import { colors, spacing } from "../theme";
 import { DropdownOption } from "../components/ui/Dropdown/types";
+import { authService } from "../lib/supabase/auth";
 
 /**
  * Use Case Selection Screen - Project Type Selection
@@ -60,6 +61,10 @@ export default function UseCaseSelectionScreen() {
   // Form state management
   const [selectedUseCase, setSelectedUseCase] = useState<string>("");
 
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
   // Form validation - use case must be selected
   const isFormValid = selectedUseCase.length > 0;
 
@@ -70,18 +75,24 @@ export default function UseCaseSelectionScreen() {
   };
 
   // Handle continue button press
-  const handleContinue = () => {
-    if (isFormValid) {
-      console.log("Continue with use case selection");
-      console.log("Complete user data:", {
-        email: userEmail,
-        verificationCode,
-        firstName,
-        lastName,
-        role,
-        useCase: selectedUseCase,
+  const handleContinue = async () => {
+    if (!isFormValid || isLoading) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Update user profile with selected use case in Supabase
+      const { profile, error: useCaseError } = await authService.updateProfile({
+        use_case: selectedUseCase,
       });
-      // Navigate to next step - job description selection
+
+      if (useCaseError) {
+        setError(authService.getErrorMessage(useCaseError));
+        return;
+      }
+
+      // Use case saved successfully, navigate to job description selection
       router.push({
         pathname: "/job-description-selection",
         params: {
@@ -93,6 +104,11 @@ export default function UseCaseSelectionScreen() {
           useCase: selectedUseCase,
         },
       });
+    } catch (error: any) {
+      setError('Failed to save use case selection. Please try again.');
+      console.error('Use case assignment error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -166,10 +182,23 @@ export default function UseCaseSelectionScreen() {
           <View style={styles.buttonSection}>
             <Button
               variant="primary"
-              title="Continue"
+              title={isLoading ? "Saving Selection..." : "Continue"}
               onPress={handleContinue}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isLoading}
             />
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Typography variant="bodyMedium" style={styles.loadingText}>
+                  Saving your preferences...
+                </Typography>
+              </View>
+            )}
+            {error && (
+              <Typography variant="bodyMedium" style={styles.errorText}>
+                {error}
+              </Typography>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -229,5 +258,24 @@ const styles = StyleSheet.create({
   buttonSection: {
     alignSelf: "stretch",
     // Fixed at bottom for consistent placement
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm, // 16px gap above loading indicator
+    gap: spacing.xs, // 8px gap between spinner and text
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+
+  errorText: {
+    color: colors.error,
+    textAlign: "center",
+    marginTop: spacing.sm, // 16px gap above error message
   },
 });

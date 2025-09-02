@@ -2,7 +2,8 @@ import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { TaskActionsBottomSheetProps, TaskAction } from "./types";
-import { Typography, Icon } from "../";
+import Typography from "../Typography";
+import Icon from "../Icon";
 import { colors, spacing } from "../../../theme";
 
 /**

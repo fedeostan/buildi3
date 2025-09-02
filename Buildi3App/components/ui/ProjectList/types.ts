@@ -1,38 +1,10 @@
 import { ViewStyle } from "react-native";
 import { FeatherIconName } from "../Icon/types";
 import { ProjectIconType, ProjectIconColor } from "../ProjectItem/types";
+import type { Project } from "../../../lib/supabase/types";
 
-/**
- * Project data interface
- */
-export interface Project {
-  /** Unique identifier for the project */
-  id?: string;
-
-  /** The name of the project */
-  name: string;
-
-  /**
-   * Icon name to display (from Feather icons)
-   * @deprecated Use projectIconType and projectIconColor instead for SVG icons
-   */
-  iconName?: FeatherIconName;
-
-  /** Background color of the icon */
-  iconColor?: string;
-
-  /** Project icon type from assets/icons/project_icons/ */
-  projectIconType?: ProjectIconType;
-
-  /** Project icon color variant */
-  projectIconColor?: ProjectIconColor;
-
-  /** Whether to show progress percentage */
-  hasPercentage?: boolean;
-
-  /** Progress percentage (0-100) */
-  percentage?: number;
-}
+// Re-export unified Project type for backward compatibility
+export type { Project };
 
 /**
  * Props for ProjectList organism component

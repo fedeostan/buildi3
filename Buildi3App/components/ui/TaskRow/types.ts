@@ -1,7 +1,8 @@
 import { ViewStyle } from "react-native";
+import type { TaskStage } from "../../../lib/supabase/types";
 
-/** Task stages matching Figma design */
-export type TaskStage = "not-started" | "in-progress" | "completed" | "blocked";
+// Re-export unified TaskStage type for backward compatibility
+export type { TaskStage };
 
 export interface TaskRowProps {
   /** Unique task identifier */

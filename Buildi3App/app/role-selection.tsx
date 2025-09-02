@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import {
@@ -10,6 +10,7 @@ import {
 } from "../components/ui";
 import { colors, spacing } from "../theme";
 import { DropdownOption } from "../components/ui/Dropdown/types";
+import { authService } from "../lib/supabase/auth";
 
 /**
  * Role Selection Screen - User Role Dropdown Selection
@@ -58,6 +59,10 @@ export default function RoleSelectionScreen() {
   // Form state management
   const [selectedRole, setSelectedRole] = useState<string>("");
 
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
   // Form validation - role must be selected
   const isFormValid = selectedRole.length > 0;
 
@@ -68,17 +73,24 @@ export default function RoleSelectionScreen() {
   };
 
   // Handle continue button press
-  const handleContinue = () => {
-    if (isFormValid) {
-      console.log("Continue with role selection");
-      console.log("Complete user data:", {
-        email: userEmail,
-        verificationCode,
-        firstName,
-        lastName,
+  const handleContinue = async () => {
+    if (!isFormValid || isLoading) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Update user profile with selected role in Supabase
+      const { profile, error: roleError } = await authService.updateProfile({
         role: selectedRole,
       });
-      // Navigate to next step - use case selection
+
+      if (roleError) {
+        setError(authService.getErrorMessage(roleError));
+        return;
+      }
+
+      // Role assigned successfully, navigate to use case selection
       router.push({
         pathname: "/use-case-selection",
         params: {
@@ -89,6 +101,11 @@ export default function RoleSelectionScreen() {
           role: selectedRole,
         },
       });
+    } catch (error: any) {
+      setError('Failed to save role selection. Please try again.');
+      console.error('Role assignment error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -161,10 +178,23 @@ export default function RoleSelectionScreen() {
           <View style={styles.buttonSection}>
             <Button
               variant="primary"
-              title="Continue"
+              title={isLoading ? "Saving Role..." : "Continue"}
               onPress={handleContinue}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isLoading}
             />
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Typography variant="bodyMedium" style={styles.loadingText}>
+                  Assigning your role...
+                </Typography>
+              </View>
+            )}
+            {error && (
+              <Typography variant="bodyMedium" style={styles.errorText}>
+                {error}
+              </Typography>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -224,5 +254,24 @@ const styles = StyleSheet.create({
   buttonSection: {
     alignSelf: "stretch",
     // Fixed at bottom for consistent placement
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm, // 16px gap above loading indicator
+    gap: spacing.xs, // 8px gap between spinner and text
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+
+  errorText: {
+    color: colors.error,
+    textAlign: "center",
+    marginTop: spacing.sm, // 16px gap above error message
   },
 });

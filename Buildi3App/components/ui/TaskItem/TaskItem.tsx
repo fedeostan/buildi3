@@ -36,16 +36,18 @@ import { format, isToday, isTomorrow, isYesterday } from "date-fns";
  * @param style - Custom container styles
  */
 const TaskItem: React.FC<TaskItemProps> = ({
-  id,
-  title,
-  dueDate,
-  status = "pending",
-  onPress,
-  isLastItem = false,
+  task,
+  onToggleComplete,
+  onTaskPress,
+  onTaskLongPress,
+  isDragging,
   style,
+  showDragHandle,
+  accessibilityLabel,
 }) => {
   // Format the due date appropriately
-  const formatDueDate = (date: Date | string) => {
+  const formatDueDate = (date: Date | string | null) => {
+    if (!date) return 'No date';
     if (typeof date === "string") {
       return date;
     }
@@ -66,23 +68,21 @@ const TaskItem: React.FC<TaskItemProps> = ({
     <Pressable
       style={({ pressed }) => [
         styles.container,
-        isLastItem && styles.lastItem,
-        status === "completed" && styles.completed,
-        pressed && styles.pressed,
+        pressed && styles.containerPressed,
         style,
       ]}
-      onPress={onPress}
+      onPress={() => onTaskPress?.(task)}
       accessibilityRole="button"
-      accessibilityLabel={`Task: ${title}, due ${formatDueDate(dueDate)}`}
+      accessibilityLabel={accessibilityLabel || `Task: ${task.title}, due ${formatDueDate(task.dueDate)}`}
       accessibilityHint="Double tap to view task details"
     >
       {/* Task content (title and due date) */}
       <View style={styles.contentContainer}>
-        <Typography variant="bodyMedium" style={styles.title}>
-          {title}
+        <Typography variant="bodyMedium" style={[styles.taskTitle, task.isCompleted && styles.taskTitleCompleted]}>
+          {task.title}
         </Typography>
-        <Typography variant="labelSmall" style={styles.dueDate}>
-          {formatDueDate(dueDate)}
+        <Typography variant="labelSmall" style={styles.taskDescription}>
+          {formatDueDate(task.dueDate)}
         </Typography>
       </View>
 

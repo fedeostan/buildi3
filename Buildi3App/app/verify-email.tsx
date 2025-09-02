@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,39 +6,37 @@ import {
   Platform,
   Clipboard,
   TextInput,
+  ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Typography, Button, Input, TopNavigationBar } from "../components/ui";
 import { colors, spacing } from "../theme";
+import { authService } from "../lib/supabase/auth";
 
 /**
- * Email Verification Screen - 6-Digit Code Input
+ * Email Verification Screen - 6-Digit Code Input with Supabase Integration
  *
  * Based on Figma design: https://www.figma.com/design/vedLoKTGfOOHamh7Novw47/Create-Account?node-id=11-75
  *
  * Purpose:
  * - Second step of account creation process
- * - User inputs 6-digit verification code sent to their email
+ * - User inputs 6-digit verification code sent to their email via Supabase Auth
  * - Supports pasting code from clipboard
- * - Continue button only enabled when exactly 6 digits are entered
- * - Follows exact Figma spacing and typography
+ * - Includes resend functionality with cooldown timer
+ * - Comprehensive error handling and loading states
  *
  * Features:
  * - Top navigation with back button
  * - Dynamic email display in subtitle
  * - 6-digit code input with proper validation
+ * - Supabase OTP verification integration
+ * - Resend code functionality with 60-second cooldown
  * - Paste functionality for better UX
- * - Button state management
+ * - Loading states and error handling
  * - Follows design system colors and spacing
  * - Proper safe area handling
- *
- * Layout (exact from Figma):
- * - 16px horizontal padding (consistent across devices)
- * - 48px gap between main sections
- * - 32px gap in content area
- * - 23px gap between header elements
- * - Dynamic safe area + 32px base padding
  */
 export default function VerifyEmailScreen() {
   const insets = useSafeAreaInsets();
@@ -49,16 +47,35 @@ export default function VerifyEmailScreen() {
 
   // State management
   const [code, setCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [canResend, setCanResend] = useState(true);
+  const [resendCountdown, setResendCountdown] = useState(0);
   const inputRef = useRef<TextInput>(null);
 
   // Check if code is exactly 6 digits
   const isCodeValid = /^\d{6}$/.test(code);
+
+  // Cleanup countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (resendCountdown > 0) {
+        setResendCountdown(0);
+        setCanResend(true);
+      }
+    };
+  }, []);
 
   // Handle code input change with validation
   const handleCodeChange = (text: string) => {
     // Only allow numbers and limit to 6 digits
     const numericText = text.replace(/[^0-9]/g, "").slice(0, 6);
     setCode(numericText);
+    
+    // Clear error when user starts typing
+    if (error && numericText.length > 0) {
+      setError("");
+    }
   };
 
   // Handle paste functionality
@@ -69,26 +86,84 @@ export default function VerifyEmailScreen() {
       const digits = clipboardText.replace(/[^0-9]/g, "").slice(0, 6);
       if (digits.length > 0) {
         setCode(digits);
+        setError(""); // Clear any existing errors
       }
     } catch (error) {
       console.log("Error reading clipboard:", error);
     }
   };
 
+  // Handle resend verification code
+  const handleResend = async () => {
+    if (!canResend || isLoading) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const { error: resendError } = await authService.resendVerification(userEmail);
+
+      if (resendError) {
+        setError(authService.getErrorMessage(resendError));
+        return;
+      }
+
+      // Start countdown timer
+      setCanResend(false);
+      setResendCountdown(60);
+      
+      const countdown = setInterval(() => {
+        setResendCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdown);
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Clear error to show success state
+      setError("");
+    } catch (error: any) {
+      setError('Failed to resend verification code. Please try again.');
+      console.error('Resend error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Handle continue button press
-  const handleContinue = () => {
-    if (isCodeValid) {
-      console.log("Continue with verification code:", code);
-      console.log("For email:", userEmail);
-      // TODO: Verify code with backend
-      // Navigate to create password screen with user data
-      router.push({
-        pathname: "/create-password",
-        params: {
-          email: userEmail,
-          code: code,
-        },
-      });
+  const handleContinue = async () => {
+    if (!isCodeValid || isLoading) return;
+
+    setIsLoading(true);
+    setError(""); // Clear any previous errors
+
+    try {
+      // Verify OTP code with Supabase
+      const { user, error: verifyError } = await authService.verifyEmailOTP(userEmail, code);
+
+      if (verifyError) {
+        setError(authService.getErrorMessage(verifyError));
+        return;
+      }
+
+      if (user) {
+        // Email verified successfully, navigate to password creation
+        router.push({
+          pathname: "/create-password",
+          params: {
+            email: userEmail,
+            code: code,
+          },
+        });
+      }
+    } catch (error: any) {
+      setError('Verification failed. Please try again.');
+      console.error('Verification error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -134,32 +209,74 @@ export default function VerifyEmailScreen() {
             {/* Header Section */}
             <View style={styles.headerSection}>
               <Typography variant="h3" style={styles.header}>
-                Verify is you
+                Verify it's you
               </Typography>
 
               <Typography variant="bodyLarge" style={styles.subtitle}>
-                We've sent you an email to {userEmail}, please introduce it
-                below to verify your account.
+                We've sent you an email to {userEmail}, please enter the code below to verify your account.
               </Typography>
             </View>
 
             {/* Input Section */}
             <View style={styles.inputSection}>
               <Input
-                label="Introduce 6 digit code"
+                label="Enter 6-digit code"
                 value={code}
                 onChangeText={handleCodeChange}
-                placeholder="Introduce 6 digit code"
+                placeholder="000000"
                 keyboardType="numeric"
                 autoCapitalize="none"
                 autoCorrect={false}
                 maxLength={6}
                 returnKeyType="done"
                 onSubmitEditing={isCodeValid ? handleContinue : undefined}
+                errorMessage={error}
                 // Add accessibility for screen readers
                 accessibilityLabel="6 digit verification code"
                 accessibilityHint="Enter the 6 digit code sent to your email"
               />
+              
+              {/* Helper Actions */}
+              <View style={styles.helperActions}>
+                {/* Paste Button */}
+                <TouchableOpacity 
+                  onPress={handlePaste} 
+                  style={styles.helperButton}
+                  disabled={isLoading}
+                >
+                  <Typography 
+                    variant="bodyMedium" 
+                    style={[
+                      styles.helperButtonText,
+                      isLoading && styles.helperButtonTextDisabled
+                    ]}
+                  >
+                    Paste Code
+                  </Typography>
+                </TouchableOpacity>
+
+                {/* Resend Code Option */}
+                <View style={styles.resendContainer}>
+                  <Typography variant="bodyMedium" style={styles.resendText}>
+                    Didn't receive it?
+                  </Typography>
+                  <TouchableOpacity 
+                    onPress={handleResend} 
+                    disabled={!canResend || isLoading}
+                    style={styles.resendButton}
+                  >
+                    <Typography 
+                      variant="bodyMedium" 
+                      style={[
+                        styles.resendButtonText,
+                        (!canResend || isLoading) && styles.resendButtonTextDisabled
+                      ]}
+                    >
+                      {canResend ? "Resend Code" : `Resend in ${resendCountdown}s`}
+                    </Typography>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </View>
 
@@ -167,10 +284,18 @@ export default function VerifyEmailScreen() {
           <View style={styles.buttonSection}>
             <Button
               variant="primary"
-              title="Continue"
+              title={isLoading ? "Verifying..." : "Continue"}
               onPress={handleContinue}
-              disabled={!isCodeValid}
+              disabled={!isCodeValid || isLoading}
             />
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Typography variant="bodyMedium" style={styles.loadingText}>
+                  {resendCountdown > 0 ? "Sending new code..." : "Verifying your code..."}
+                </Typography>
+              </View>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -214,7 +339,7 @@ const styles = StyleSheet.create({
 
   header: {
     color: colors.text, // #001848 from Figma
-    // Typography h1 variant handles font styles (28px, Montserrat 600)
+    // Typography h3 variant handles font styles
   },
 
   subtitle: {
@@ -224,16 +349,68 @@ const styles = StyleSheet.create({
 
   inputSection: {
     alignSelf: "stretch",
-    gap: spacing.xs, // 8px gap between input and helper text
+    gap: spacing.sm, // 16px gap between input and helpers
   },
 
-  helperText: {
-    color: colors.textTertiary, // Subtle helper text
-    textAlign: "center",
+  helperActions: {
+    alignSelf: "stretch",
+    alignItems: "center",
+    gap: spacing.sm, // 16px gap between helper actions
+  },
+
+  helperButton: {
+    padding: spacing.xs, // 8px padding for touch area
+  },
+
+  helperButtonText: {
+    color: colors.primary,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  helperButtonTextDisabled: {
+    color: colors.textTertiary,
+  },
+
+  resendContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs, // 8px gap between text and button
+  },
+
+  resendText: {
+    color: colors.textSecondary,
+  },
+
+  resendButton: {
+    padding: spacing.xs, // 8px padding for touch area
+  },
+
+  resendButtonText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+
+  resendButtonTextDisabled: {
+    color: colors.textTertiary,
   },
 
   buttonSection: {
     alignSelf: "stretch",
     // Fixed at bottom for consistent placement
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm, // 16px gap above loading indicator
+    gap: spacing.xs, // 8px gap between spinner and text
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    textAlign: "center",
   },
 });

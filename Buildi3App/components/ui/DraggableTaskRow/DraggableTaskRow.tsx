@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
@@ -67,7 +67,7 @@ const DraggableTaskRow: React.FC<DraggableTaskRowProps> = React.memo(({
       }
       
       // Measure initial position for absolute coordinates
-      containerRef.current?.measureInWindow((x, y, width, height) => {
+      containerRef.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
         initialPosition.value = { x, y };
         startDrag(dragPayload, { x, y });
       });

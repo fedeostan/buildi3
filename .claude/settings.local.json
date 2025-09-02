@@ -15,7 +15,25 @@
       "Bash(npx tsc:*)",
       "mcp__figma-dev-mode-mcp-server__get_metadata",
       "Bash(npm run lint)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__generate_typescript_types",
+      "Bash(npm install:*)",
+      "mcp__supabase__get_anon_key",
+      "mcp__supabase__search_docs",
+      "mcp__supabase__search_docs",
+      "mcp__context7__get-library-docs",
+      "Bash(pkill:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(git log:*)",
+      "mcp__supabase__get_logs",
+      "WebFetch(domain:www.anthropic.com)"
     ],
     "additionalDirectories": [
       "/Users/federicoostan"

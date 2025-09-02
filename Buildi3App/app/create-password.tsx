@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -16,6 +17,7 @@ import {
   Icon,
 } from "../components/ui";
 import { colors, spacing } from "../theme";
+import { authService } from "../lib/supabase/auth";
 
 /**
  * Create Password Screen - Password Setup Form
@@ -76,6 +78,11 @@ export default function CreatePasswordScreen() {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
 
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
+
   // Password validation function
   const validatePassword = (pwd: string) => {
     const errors: string[] = [];
@@ -135,16 +142,23 @@ export default function CreatePasswordScreen() {
   };
 
   // Handle continue button press
-  const handleContinue = () => {
-    if (isFormValid) {
-      console.log("Continue with password creation");
-      console.log("User data:", {
-        email: userEmail,
-        verificationCode,
-        passwordSet: true,
-      });
-      // TODO: Save password to backend (hash it properly)
-      // Navigate to complete profile screen with user data
+  const handleContinue = async () => {
+    if (!isFormValid || isLoading) return;
+
+    setIsLoading(true);
+    setPasswordError("");
+    setConfirmError("");
+
+    try {
+      // Update user password with Supabase
+      const { error } = await authService.updatePassword(password);
+
+      if (error) {
+        setPasswordError(authService.getErrorMessage(error));
+        return;
+      }
+
+      // Password updated successfully, proceed to profile completion
       router.push({
         pathname: "/complete-profile",
         params: {
@@ -153,6 +167,11 @@ export default function CreatePasswordScreen() {
           passwordSet: "true",
         },
       });
+    } catch (error: any) {
+      setPasswordError('Failed to set password. Please try again.');
+      console.error('Password update error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -302,10 +321,18 @@ export default function CreatePasswordScreen() {
           <View style={styles.buttonSection}>
             <Button
               variant="primary"
-              title="Continue"
+              title={isLoading ? "Setting Password..." : "Continue"}
               onPress={handleContinue}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isLoading}
             />
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Typography variant="bodyMedium" style={styles.loadingText}>
+                  Securing your account...
+                </Typography>
+              </View>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -371,5 +398,18 @@ const styles = StyleSheet.create({
   buttonSection: {
     alignSelf: "stretch",
     // Fixed at bottom for consistent placement
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm, // 16px gap above loading indicator
+    gap: spacing.xs, // 8px gap between spinner and text
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    textAlign: "center",
   },
 });

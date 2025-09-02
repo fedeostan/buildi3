@@ -72,6 +72,12 @@ export const styles = StyleSheet.create({
   tagContainer: {
     // Tag styling handled by Tag component
   },
+  iconContainer: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   // Pressed state styles
   containerPressed: {
     opacity: 0.8,

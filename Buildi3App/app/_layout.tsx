@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { AuthProvider } from "../contexts/AuthContext";
 
 /**
  * Root Layout - Stack navigator for the entire app
@@ -22,8 +23,9 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
  */
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
+    <AuthProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <BottomSheetModalProvider>
         <Stack
           screenOptions={{
             headerShown: false, // No header for clean full-screen experience
@@ -116,7 +118,8 @@ export default function RootLayout() {
             }}
           />
         </Stack>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+        </BottomSheetModalProvider>
+      </GestureHandlerRootView>
+    </AuthProvider>
   );
 }

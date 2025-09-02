@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Typography, Button, Input, TopNavigationBar } from "../components/ui";
 import { colors, spacing } from "../theme";
+import { authService } from "../lib/supabase/auth";
 
 /**
  * Sign Up Screen - Email Input Step
@@ -38,6 +39,7 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [hasEmailBeenTouched, setHasEmailBeenTouched] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Email validation regex (simple but effective)
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -71,14 +73,42 @@ export default function SignUpScreen() {
   };
 
   // Handle continue button press
-  const handleContinue = () => {
-    if (isEmailValid) {
-      console.log("Continue with email:", email);
-      // Navigate to email verification screen with email parameter
-      router.push({
-        pathname: "/verify-email",
-        params: { email: email.trim() },
-      });
+  const handleContinue = async () => {
+    console.log('handleContinue called with email:', email);
+    console.log('isEmailValid:', isEmailValid, 'isLoading:', isLoading);
+    
+    if (!isEmailValid || isLoading) return;
+
+    setIsLoading(true);
+    setEmailError(""); // Clear any previous errors
+
+    try {
+      console.log('Calling authService.signUpWithEmail...');
+      // Sign up user with Supabase and send verification email
+      const { user, error, needsVerification } = await authService.signUpWithEmail(email.trim());
+      
+      console.log('Signup result:', { user: !!user, error: !!error, needsVerification });
+      if (error) console.log('Signup error details:', error);
+
+      if (error) {
+        setEmailError(authService.getErrorMessage(error));
+        return;
+      }
+
+      if (needsVerification) {
+        console.log('Navigating to verify-email...');
+        // Navigate to email verification screen
+        router.push({
+          pathname: "/verify-email",
+          params: { email: email.trim() },
+        });
+      }
+    } catch (error: any) {
+      console.error('Signup error (catch):', error);
+      setEmailError('Something went wrong. Please try again.');
+    } finally {
+      console.log('Setting loading to false');
+      setIsLoading(false);
     }
   };
 
@@ -152,10 +182,21 @@ export default function SignUpScreen() {
           <View style={styles.buttonSection}>
             <Button
               variant="primary"
-              title="Continue"
-              onPress={handleContinue}
-              disabled={!isEmailValid}
+              title={isLoading ? "Sending..." : "Continue"}
+              onPress={() => {
+                console.log('Button pressed! Email:', email, 'Valid:', isEmailValid);
+                handleContinue();
+              }}
+              disabled={!isEmailValid || isLoading}
             />
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Typography variant="bodyMedium" style={styles.loadingText}>
+                  Creating your account...
+                </Typography>
+              </View>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -215,5 +256,18 @@ const styles = StyleSheet.create({
   buttonSection: {
     alignSelf: "stretch",
     // Fixed at bottom for consistent placement
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm, // 16px gap above loading indicator
+    gap: spacing.xs, // 8px gap between spinner and text
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    textAlign: "center",
   },
 });

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import {
@@ -10,6 +10,7 @@ import {
 } from "../components/ui";
 import { colors, spacing } from "../theme";
 import { DropdownOption } from "../components/ui/Dropdown/types";
+import { authService } from "../lib/supabase/auth";
 
 /**
  * Job Description Selection Screen - Job Type Selection
@@ -61,6 +62,10 @@ export default function JobDescriptionSelectionScreen() {
   const [selectedJobDescription, setSelectedJobDescription] =
     useState<string>("");
 
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
   // Form validation - job description must be selected
   const isFormValid = selectedJobDescription.length > 0;
 
@@ -71,10 +76,15 @@ export default function JobDescriptionSelectionScreen() {
   };
 
   // Handle continue button press
-  const handleContinue = () => {
-    if (isFormValid) {
-      console.log("Complete account setup");
-      console.log("Final user data:", {
+  const handleContinue = async () => {
+    if (!isFormValid || isLoading) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Complete onboarding with final job description and mark user as active
+      const { profile, error: completionError } = await authService.completeOnboarding({
         email: userEmail,
         verificationCode,
         firstName,
@@ -83,21 +93,19 @@ export default function JobDescriptionSelectionScreen() {
         useCase,
         jobDescription: selectedJobDescription,
       });
-      // TODO: Save complete user profile data to backend
-      // TODO: Complete registration process
-      // Navigate to project setup screen
-      router.push({
-        pathname: "/project-setup",
-        params: {
-          email: userEmail,
-          code: verificationCode,
-          firstName,
-          lastName,
-          role,
-          useCase,
-          jobDescription: selectedJobDescription,
-        },
-      });
+
+      if (completionError) {
+        setError(authService.getErrorMessage(completionError));
+        return;
+      }
+
+      // Onboarding completed successfully, navigate to main app
+      router.replace("/(tabs)/home");
+    } catch (error: any) {
+      setError('Failed to complete onboarding. Please try again.');
+      console.error('Onboarding completion error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -171,10 +179,23 @@ export default function JobDescriptionSelectionScreen() {
           <View style={styles.buttonSection}>
             <Button
               variant="primary"
-              title="Continue"
+              title={isLoading ? "Creating Account..." : "Complete Setup"}
               onPress={handleContinue}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isLoading}
             />
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Typography variant="bodyMedium" style={styles.loadingText}>
+                  Finalizing your account...
+                </Typography>
+              </View>
+            )}
+            {error && (
+              <Typography variant="bodyMedium" style={styles.errorText}>
+                {error}
+              </Typography>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -234,5 +255,24 @@ const styles = StyleSheet.create({
   buttonSection: {
     alignSelf: "stretch",
     // Fixed at bottom for consistent placement
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm, // 16px gap above loading indicator
+    gap: spacing.xs, // 8px gap between spinner and text
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+
+  errorText: {
+    color: colors.error,
+    textAlign: "center",
+    marginTop: spacing.sm, // 16px gap above error message
   },
 });

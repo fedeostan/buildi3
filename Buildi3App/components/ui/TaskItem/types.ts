@@ -1,23 +1,8 @@
 import { ViewStyle } from "react-native";
+import type { Task, TaskPriority } from "../../../lib/supabase/types";
 
-export interface Task {
-  /** Unique task identifier */
-  id: string;
-  /** Task title */
-  title: string;
-  /** Task description or subtitle */
-  description?: string;
-  /** Task due date */
-  dueDate: Date;
-  /** Whether task is completed */
-  isCompleted: boolean;
-  /** Task priority level */
-  priority?: "low" | "medium" | "high";
-  /** Project or category ID */
-  projectId?: string;
-  /** Tags or labels */
-  tags?: string[];
-}
+// Re-export unified Task type for backward compatibility
+export type { Task, TaskPriority };
 
 export interface TaskItemProps {
   /** Task data */

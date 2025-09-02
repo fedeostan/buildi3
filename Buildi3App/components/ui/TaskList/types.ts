@@ -1,10 +1,12 @@
 import { ViewStyle } from "react-native";
 import { TaskItemProps } from "../TaskItem";
+import type { Task as UnifiedTask } from "../../../lib/supabase/types";
 
 /**
  * Type for an individual task
+ * Re-export the unified Task type for consistency
  */
-export type Task = Omit<TaskItemProps, "isLastItem" | "style">;
+export type Task = UnifiedTask;
 
 /**
  * Props for the TaskList component

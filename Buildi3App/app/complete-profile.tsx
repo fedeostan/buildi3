@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Typography, Button, Input, TopNavigationBar } from "../components/ui";
 import { colors, spacing } from "../theme";
+import { authService } from "../lib/supabase/auth";
 
 /**
  * Complete Profile Screen - Name Input Form
@@ -44,22 +45,33 @@ export default function CompleteProfileScreen() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
 
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
   // Form validation - both fields must have content
   const isFormValid = firstName.trim().length > 0 && lastName.trim().length > 0;
 
   // Handle continue button press
-  const handleContinue = () => {
-    if (isFormValid) {
-      console.log("Continue with profile completion");
-      console.log("User data:", {
-        email: userEmail,
-        verificationCode,
-        passwordSet,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+  const handleContinue = async () => {
+    if (!isFormValid || isLoading) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Create/update user profile with Supabase
+      const { profile, error: profileError } = await authService.updateProfile({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
       });
-      // TODO: Save user profile data to backend
-      // Navigate to role selection screen with user data
+
+      if (profileError) {
+        setError(authService.getErrorMessage(profileError));
+        return;
+      }
+
+      // Profile created successfully, navigate to role selection
       router.push({
         pathname: "/role-selection",
         params: {
@@ -70,6 +82,11 @@ export default function CompleteProfileScreen() {
           lastName: lastName.trim(),
         },
       });
+    } catch (error: any) {
+      setError('Failed to save profile. Please try again.');
+      console.error('Profile creation error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -158,10 +175,23 @@ export default function CompleteProfileScreen() {
           <View style={styles.buttonSection}>
             <Button
               variant="primary"
-              title="Continue"
+              title={isLoading ? "Saving Profile..." : "Continue"}
               onPress={handleContinue}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isLoading}
             />
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Typography variant="bodyMedium" style={styles.loadingText}>
+                  Creating your profile...
+                </Typography>
+              </View>
+            )}
+            {error && (
+              <Typography variant="bodyMedium" style={styles.errorText}>
+                {error}
+              </Typography>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -221,5 +251,24 @@ const styles = StyleSheet.create({
   buttonSection: {
     alignSelf: "stretch",
     // Fixed at bottom for consistent placement
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm, // 16px gap above loading indicator
+    gap: spacing.xs, // 8px gap between spinner and text
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+
+  errorText: {
+    color: colors.error,
+    textAlign: "center",
+    marginTop: spacing.sm, // 16px gap above error message
   },
 });

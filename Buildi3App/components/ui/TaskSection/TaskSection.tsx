@@ -1,7 +1,10 @@
 import React from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { TaskSectionProps } from "./types";
-import { Typography, DraggableTaskRow, Icon, useDragContext } from "../";
+import Typography from "../Typography";
+import DraggableTaskRow from "../DraggableTaskRow";
+import Icon from "../Icon";
+import { useDragContext } from "../DragContext";
 import { colors, spacing } from "../../../theme";
 
 /**

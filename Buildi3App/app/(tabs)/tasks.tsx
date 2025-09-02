@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { colors, spacing } from "../../theme";
@@ -9,8 +9,11 @@ import {
   TaskSection,
   TaskDragPayload,
   DragProvider,
+  Typography,
 } from "../../components/ui";
-import type { TaskStage } from "../../components/ui/TaskRow/types";
+import type { TaskStage } from "../../lib/supabase/types";
+import { useTasks } from "../../hooks/useTasks";
+import { useAuth } from "../../hooks/useAuth";
 
 /**
  * Tasks Screen - Task management and tracking
@@ -21,66 +24,21 @@ import type { TaskStage } from "../../components/ui/TaskRow/types";
 export default function TasksScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user } = useAuth();
 
-  // Task data with stages matching Figma design
-  const [tasks, setTasks] = React.useState([
-    {
-      id: "1",
-      title: "Design onboarding flow",
-      projectName: "New App",
-      dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
-      stage: "not-started" as TaskStage,
-      isCompleted: false,
-    },
-    {
-      id: "2",
-      title: "Fix login bug", 
-      projectName: "Auth",
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      stage: "not-started" as TaskStage,
-      isCompleted: false,
-    },
-    {
-      id: "3",
-      title: "Create wireframes",
-      projectName: "New App", 
-      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 11 Sep (future)
-      stage: "not-started" as TaskStage,
-      isCompleted: false,
-    },
-    {
-      id: "4",
-      title: "Update dependencies",
-      projectName: "Mobile",
-      dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday  
-      stage: "in-progress" as TaskStage,
-      isCompleted: false,
-    },
-    {
-      id: "5",
-      title: "Call client to confirm scope",
-      projectName: "Acme Co",
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      stage: "in-progress" as TaskStage,
-      isCompleted: false,
-    },
-    {
-      id: "6",
-      title: "Review final designs",
-      projectName: "Mobile",
-      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 11 Sep
-      stage: "in-progress" as TaskStage,
-      isCompleted: false,
-    },
-    {
-      id: "7",
-      title: "Prepare sprint report",
-      projectName: "Ops", 
-      dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
-      stage: "completed" as TaskStage,
-      isCompleted: true,
-    },
-  ]);
+  // Use real tasks data from the backend
+  const {
+    tasks,
+    loading,
+    error,
+    updateTaskStage,
+    getTasksByStage,
+    refreshTasks,
+  } = useTasks({
+    includeCompleted: true,
+    orderBy: 'due_date',
+    orderDirection: 'asc'
+  });
 
   // Section expansion state
   const [expandedSections, setExpandedSections] = React.useState<Record<TaskStage, boolean>>({
@@ -148,30 +106,23 @@ export default function TasksScreen() {
     }));
   };
 
-  // Handle task stage change
-  const handleTaskStageChange = (taskId: string, newStage: TaskStage) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? { ...task, stage: newStage, isCompleted: newStage === "completed" }
-          : task
-      )
-    );
+  // Handle task stage change using real backend
+  const handleTaskStageChange = async (taskId: string, newStage: TaskStage) => {
+    try {
+      const result = await updateTaskStage(taskId, newStage);
+      if (result.error) {
+        console.error('Failed to update task stage:', result.error);
+        // Could show a toast/alert here
+      }
+    } catch (error) {
+      console.error('Error updating task stage:', error);
+    }
   };
 
   // Handle task completion toggle (legacy support)
-  const handleTaskToggleComplete = (taskId: string, completed: boolean) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? { 
-              ...task, 
-              isCompleted: completed, 
-              stage: completed ? "completed" : "not-started" as TaskStage 
-            }
-          : task
-      )
-    );
+  const handleTaskToggleComplete = async (taskId: string, completed: boolean) => {
+    const newStage: TaskStage = completed ? "completed" : "not-started";
+    await handleTaskStageChange(taskId, newStage);
   };
 
   // Handle task press - navigate to task detail screen
@@ -207,27 +158,8 @@ export default function TasksScreen() {
     handleTaskStageChange(draggedTask.id, targetStage);
   };
 
-  // Organize tasks by stage and sort by due date (closest first)
-  const tasksByStage = React.useMemo(() => {
-    const stages: Record<TaskStage, typeof tasks> = {
-      "not-started": [],
-      "in-progress": [],
-      "completed": [],
-      "blocked": [],
-    };
-
-    tasks.forEach(task => {
-      stages[task.stage].push(task);
-    });
-
-    // Sort each stage by due date (closest first)
-    Object.keys(stages).forEach(stageKey => {
-      const stage = stageKey as TaskStage;
-      stages[stage].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
-    });
-
-    return stages;
-  }, [tasks]);
+  // Use tasks organized by stage from the hook
+  const tasksByStage = getTasksByStage();
 
   // Stage configuration matching Figma
   const stageConfig = [
@@ -242,6 +174,55 @@ export default function TasksScreen() {
       paddingTop: Math.max(insets.top, 20),
     },
   });
+
+  // Loading state
+  if (loading) {
+    return (
+      <View style={[styles.container, dynamicStyles.container]}>
+        <GeneralHeader
+          title="My Tasks"
+          menuSections={tasksMenuSections}
+          onMenuOptionSelect={handleMenuOptionSelect}
+          menuTitle="Task Options"
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Typography variant="bodyMedium" style={styles.loadingText}>
+            Loading your tasks...
+          </Typography>
+        </View>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <View style={[styles.container, dynamicStyles.container]}>
+        <GeneralHeader
+          title="My Tasks"
+          menuSections={tasksMenuSections}
+          onMenuOptionSelect={handleMenuOptionSelect}
+          menuTitle="Task Options"
+        />
+        <View style={styles.errorContainer}>
+          <Typography variant="bodyLarge" style={styles.errorTitle}>
+            Unable to load tasks
+          </Typography>
+          <Typography variant="bodyMedium" style={styles.errorMessage}>
+            {error}
+          </Typography>
+          <Typography 
+            variant="labelLarge" 
+            style={styles.retryButton}
+            onPress={refreshTasks}
+          >
+            Tap to retry
+          </Typography>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <DragProvider onTaskDrop={handleTaskDrop}>
@@ -266,7 +247,7 @@ export default function TasksScreen() {
                 key={config.stage}
                 title={config.title}
                 stage={config.stage}
-                tasks={tasksByStage[config.stage]}
+                tasks={tasksByStage[config.stage].map(task => ({ ...task, stage: task.stage || config.stage }))}
                 isExpanded={expandedSections[config.stage]}
                 onToggleExpanded={handleToggleSection}
                 onTaskPress={handleTaskPress}
@@ -299,5 +280,37 @@ const styles = StyleSheet.create({
   },
   taskOrganization: {
     marginTop: spacing.sm,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    textAlign: 'center',
+    color: colors.textSecondary,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  errorTitle: {
+    color: colors.error,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  errorMessage: {
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  retryButton: {
+    color: colors.primary,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
   },
 });

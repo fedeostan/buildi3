@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Typography, Button } from "../components/ui";
 import { colors, spacing } from "../theme";
+import { authService } from "../lib/supabase/auth";
+import { useAuth } from "../hooks/useAuth";
 
 /**
  * Create Account / Log In Screen - First screen users see after app launch
@@ -30,6 +32,7 @@ import { colors, spacing } from "../theme";
  */
 export default function CreateAccountLogInScreen() {
   const insets = useSafeAreaInsets();
+  const { signOut } = useAuth();
 
   // Calculate dynamic padding based on safe area + design system
   const dynamicStyles = StyleSheet.create({
@@ -74,6 +77,24 @@ export default function CreateAccountLogInScreen() {
 
         {/* Buttons Section */}
         <View style={styles.buttonsSection}>
+          {/* TEMPORARY: Sign out button for testing */}
+          <Button
+            variant="secondary"
+            title="🔓 Complete Sign Out (Debug)"
+            style={[styles.secondaryButton, { backgroundColor: colors.error }]}
+            onPress={async () => {
+              console.log("🚨 Starting COMPLETE sign out...");
+              try {
+                // Use the AuthContext sign out (more thorough cleanup)
+                await signOut();
+                console.log("✅ AuthContext sign out completed - session should be cleared");
+                
+              } catch (error) {
+                console.error("❌ Sign out error:", error);
+              }
+            }}
+          />
+
           <Button
             variant="primary"
             title="Sign up"
@@ -89,8 +110,8 @@ export default function CreateAccountLogInScreen() {
             title="Log in"
             style={styles.secondaryButton}
             onPress={() => {
-              console.log("Log in pressed");
-              // TODO: Navigate to login screen or directly to main app
+              console.log("Log in pressed - navigating to login screen");
+              router.push("/login");
             }}
           />
         </View>
