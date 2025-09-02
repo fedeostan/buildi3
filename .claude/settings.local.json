@@ -12,7 +12,10 @@
       "mcp__context7__resolve-library-id",
       "WebFetch(domain:feathericons.com)",
       "WebFetch(domain:github.com)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__figma-dev-mode-mcp-server__get_metadata",
+      "Bash(npm run lint)",
+      "Bash(mkdir:*)"
     ],
     "additionalDirectories": [
       "/Users/federicoostan"

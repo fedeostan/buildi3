@@ -31,6 +31,9 @@ export { default as TaskList } from "./TaskList";
 export { default as UpcomingTaskWidget } from "./UpcomingTaskWidget";
 export { default as TaskRow } from "./TaskRow";
 export type { TaskRowProps } from "./TaskRow";
+export { default as DraggableTaskRow } from "./DraggableTaskRow";
+export type { DraggableTaskRowProps, TaskDragPayload, SectionDropPayload } from "./DraggableTaskRow";
+export { DragProvider, useDragContext } from "./DragContext";
 
 // Input system (React Native best practices with Figma design)
 export { default as Input } from "./Input";

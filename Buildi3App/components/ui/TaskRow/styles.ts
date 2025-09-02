@@ -3,11 +3,13 @@ import { colors, spacing } from "../../../theme";
 
 export const styles = StyleSheet.create({
   container: {
+    backgroundColor: colors.background,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     flexDirection: "row",
     alignItems: "center",
     minHeight: 56,
+    borderRadius: 8,
   },
   checkButton: {
     width: 44,

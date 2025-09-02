@@ -1,5 +1,6 @@
 import { ViewStyle } from "react-native";
 import { TaskRowProps, TaskStage } from "../TaskRow/types";
+import { TaskDragPayload } from "../DraggableTaskRow/types";
 
 export interface TaskSectionProps {
   /** Section title/stage name */
@@ -7,7 +8,7 @@ export interface TaskSectionProps {
   /** Task stage this section represents */
   stage: TaskStage;
   /** Array of tasks in this section */
-  tasks: Array<TaskRowProps & { stage: TaskStage }>;
+  tasks: (TaskRowProps & { stage: TaskStage })[];
   /** Whether section is expanded */
   isExpanded: boolean;
   /** Toggle expansion handler */
@@ -18,6 +19,12 @@ export interface TaskSectionProps {
   onTaskStageChange: (taskId: string, newStage: TaskStage) => void;
   /** Task completion toggle handler (legacy support) */
   onTaskToggleComplete?: (taskId: string, completed: boolean) => void;
+  /** Drag start handler */
+  onDragStart?: (payload: TaskDragPayload) => void;
+  /** Drag end handler */
+  onDragEnd?: (payload: TaskDragPayload) => void;
+  /** Handle task drop into this section */
+  onTaskDrop?: (draggedTask: TaskDragPayload, targetStage: TaskStage) => void;
   /** Optional container style */
   style?: ViewStyle;
 }

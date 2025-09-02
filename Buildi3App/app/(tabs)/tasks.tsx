@@ -4,11 +4,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { colors, spacing } from "../../theme";
 import {
-  Typography,
   GeneralHeader,
   MenuSection,
-  TaskRow,
   TaskSection,
+  TaskDragPayload,
+  DragProvider,
 } from "../../components/ui";
 import type { TaskStage } from "../../components/ui/TaskRow/types";
 
@@ -189,6 +189,24 @@ export default function TasksScreen() {
     });
   };
 
+  // Handle drag start
+  const handleDragStart = (payload: TaskDragPayload) => {
+    console.log(`Started dragging task: ${payload.title}`);
+  };
+
+  // Handle drag end  
+  const handleDragEnd = (payload: TaskDragPayload) => {
+    console.log(`Ended dragging task: ${payload.title}`);
+  };
+
+  // Handle task drop - move task to new stage
+  const handleTaskDrop = (draggedTask: TaskDragPayload, targetStage: TaskStage) => {
+    console.log(`Moving task "${draggedTask.title}" from ${draggedTask.stage} to ${targetStage}`);
+    
+    // Update the task's stage using existing handler
+    handleTaskStageChange(draggedTask.id, targetStage);
+  };
+
   // Organize tasks by stage and sort by due date (closest first)
   const tasksByStage = React.useMemo(() => {
     const stages: Record<TaskStage, typeof tasks> = {
@@ -226,38 +244,43 @@ export default function TasksScreen() {
   });
 
   return (
-    <View style={[styles.container, dynamicStyles.container]}>
-      {/* General Header with Tasks-specific menu */}
-      <GeneralHeader
-        title="My Tasks"
-        menuSections={tasksMenuSections}
-        onMenuOptionSelect={handleMenuOptionSelect}
-        menuTitle="Task Options"
-      />
+    <DragProvider onTaskDrop={handleTaskDrop}>
+      <View style={[styles.container, dynamicStyles.container]}>
+        {/* General Header with Tasks-specific menu */}
+        <GeneralHeader
+          title="My Tasks"
+          menuSections={tasksMenuSections}
+          onMenuOptionSelect={handleMenuOptionSelect}
+          menuTitle="Task Options"
+        />
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Task Organization by Stage */}
-        <View style={styles.taskOrganization}>
-          {stageConfig.map((config) => (
-            <TaskSection
-              key={config.stage}
-              title={config.title}
-              stage={config.stage}
-              tasks={tasksByStage[config.stage]}
-              isExpanded={expandedSections[config.stage]}
-              onToggleExpanded={handleToggleSection}
-              onTaskPress={handleTaskPress}
-              onTaskStageChange={handleTaskStageChange}
-              onTaskToggleComplete={handleTaskToggleComplete}
-            />
-          ))}
-        </View>
-      </ScrollView>
-    </View>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Task Organization by Stage */}
+          <View style={styles.taskOrganization}>
+            {stageConfig.map((config) => (
+              <TaskSection
+                key={config.stage}
+                title={config.title}
+                stage={config.stage}
+                tasks={tasksByStage[config.stage]}
+                isExpanded={expandedSections[config.stage]}
+                onToggleExpanded={handleToggleSection}
+                onTaskPress={handleTaskPress}
+                onTaskStageChange={handleTaskStageChange}
+                onTaskToggleComplete={handleTaskToggleComplete}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onTaskDrop={handleTaskDrop}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+    </DragProvider>
   );
 }
 
