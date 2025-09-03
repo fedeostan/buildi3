@@ -3,8 +3,8 @@ import { colors, spacing } from "../../../theme";
 
 export const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.backgroundSecondary, // White background
-    borderRadius: 12,
+    backgroundColor: colors.widgetContentArea,
+    borderRadius: 16,
     paddingHorizontal: spacing.sm, // 16px horizontal padding
     paddingVertical: spacing.sm, // 16px vertical padding
     marginBottom: spacing.xs, // 8px margin between items
@@ -50,11 +50,8 @@ export const styles = StyleSheet.create({
     paddingRight: spacing.xs, // Small spacing before tag
   },
   taskTitle: {
-    fontSize: 16,
-    fontWeight: "500", // Medium weight
     color: colors.text,
-    lineHeight: 20,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   taskTitleCompleted: {
     textDecorationLine: "line-through",
@@ -62,12 +59,21 @@ export const styles = StyleSheet.create({
     opacity: 0.7,
   },
   taskDescription: {
-    fontSize: 14,
     color: colors.textSecondary,
-    lineHeight: 18,
   },
   taskDescriptionCompleted: {
     opacity: 0.5,
+  },
+  dueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  dueLabel: {
+    color: colors.textSubtitle,
+    marginRight: spacing.xs / 2, // ~4px per Figma
+  },
+  dueValue: {
+    color: colors.textSubtitle,
   },
   tagContainer: {
     // Tag styling handled by Tag component
@@ -82,5 +88,22 @@ export const styles = StyleSheet.create({
   containerPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.98 }],
+  },
+  // Status indicator styles
+  statusIndicator: {
+    width: 4,
+    height: 24,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginRight: spacing.sm, // 16px spacing from content
+  },
+  statusIndicatorCompleted: {
+    backgroundColor: colors.greenAlpha10,
+  },
+  statusIndicatorYellow: {
+    backgroundColor: colors.yellowAlpha10,
+  },
+  statusIndicatorRed: {
+    backgroundColor: colors.redAlpha10,
   },
 });

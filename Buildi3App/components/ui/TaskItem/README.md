@@ -1,72 +1,81 @@
-# TaskItem Component
+# TaskItem Component - 1:1 Figma Implementation
 
 ## Overview
 
-The TaskItem component is a clickable element that displays task information in a clean, organized manner. It's used within the UpcomingTaskWidget to display individual tasks.
+The TaskItem component is a clickable element that displays task information with perfect Figma design system compliance. Enhanced with proper Typography variants, completion status indicators, and consistent design token usage.
 
 ## Design Reference
 
-- [Figma Design](https://www.figma.com/design/HgV69RizRV5dzy7p8gmuIL/Design-System?node-id=43-1180&t=8IkPqWvVPo18mIw5-4)
+- [Figma Design](https://www.figma.com/design/HgV69RizRV5dzy7p8gmuIL/Design-System?node-id=43-1180&t=RR70TF6y3NyuIflv-4)
 
 ## Features
 
-- Displays task title and due date
-- Shows a chevron-right icon for navigation
-- Provides visual feedback when pressed
-- Supports different status states (completed, pending, in-progress)
-- Adapts to being the last item in a list (no bottom margin)
+- **Status Indicator**: 4px left border showing completion state (gray/green)
+- **Dash Variant**: Left dash uses Tag variant alpha backgrounds (red/yellow/green) based on due date
+- **Enhanced Typography**: Uses bodyLarge for title, bodyMedium for due label/value
+- **Smart Date Formatting**: Today/Tomorrow/Yesterday with time display
+- **Visual States**: Proper completed state with strikethrough and opacity
+- **Navigation**: Chevron-right icon for task navigation
+- **Accessibility**: Comprehensive screen reader support
+- **Press Feedback**: Scale animation on interaction
 
 ## Usage
 
 ```tsx
-import TaskItem from '../components/ui/TaskItem';
+import { TaskItem } from '@/components/ui';
 
-// Basic usage
+// Basic usage with Task object
 <TaskItem
-  id="task-123"
-  title="Complete project proposal"
-  dueDate={new Date('2023-06-15T14:00:00')}
-  onPress={() => handleTaskPress('task-123')}
+  task={{
+    id: "task-123",
+    title: "Complete project proposal",
+    dueDate: new Date('2023-06-15T14:00:00'),
+    isCompleted: false
+  }}
+  onTaskPress={(task) => handleTaskNavigation(task)}
 />
 
-// With status
+// Completed task
 <TaskItem
-  id="task-456"
-  title="Review code changes"
-  dueDate="Tomorrow at 2:00 PM"
-  status="completed"
-  onPress={() => handleTaskPress('task-456')}
+  task={{
+    id: "task-456",
+    title: "Review code changes",
+    dueDate: new Date('2023-06-16T14:00:00'),
+    isCompleted: true
+  }}
+  onTaskPress={(task) => handleTaskNavigation(task)}
 />
 
-// Last item in a list
+// With completion toggle
 <TaskItem
-  id="task-789"
-  title="Send client email"
-  dueDate={new Date('2023-06-18T10:00:00')}
-  isLastItem={true}
-  onPress={() => handleTaskPress('task-789')}
+  task={taskData}
+  onTaskPress={(task) => router.push(`/task/${task.id}`)}
+  onToggleComplete={(taskId) => updateTaskCompletion(taskId)}
 />
 ```
 
 ## Props
 
-| Prop       | Type                                      | Required | Default   | Description                             |
-| ---------- | ----------------------------------------- | -------- | --------- | --------------------------------------- |
-| id         | string                                    | Yes      | -         | Unique identifier for the task          |
-| title      | string                                    | Yes      | -         | Title/description of the task           |
-| dueDate    | Date \| string                            | Yes      | -         | Due date of the task                    |
-| status     | 'completed' \| 'pending' \| 'in-progress' | No       | 'pending' | Status of the task                      |
-| onPress    | () => void                                | No       | -         | Function called when pressed            |
-| isLastItem | boolean                                   | No       | false     | Whether this is the last item in a list |
-| style      | ViewStyle                                 | No       | -         | Custom container styles                 |
+| Prop               | Type                     | Required | Description                                      |
+| ------------------ | ------------------------ | -------- | ------------------------------------------------ |
+| task               | Task                     | Yes      | Task object with id, title, dueDate, isCompleted |
+| onTaskPress        | (task: Task) => void     | No       | Function called when task is pressed             |
+| onToggleComplete   | (taskId: string) => void | No       | Function called to toggle completion             |
+| onTaskLongPress    | (task: Task) => void     | No       | Function called on long press for drag           |
+| isDragging         | boolean                  | No       | Whether task is being dragged                    |
+| showDragHandle     | boolean                  | No       | Whether to show drag handle                      |
+| style              | ViewStyle                | No       | Custom container styles                          |
+| accessibilityLabel | string                   | No       | Custom accessibility label                       |
 
-## Design Tokens Used
+## Enhanced Design Tokens Used
 
-- colors.widgetContentArea (background)
-- colors.text (title)
-- colors.textTertiary (due date)
-- colors.actionText (icon)
-- spacing.xs (vertical padding)
-- spacing.sm (horizontal padding)
-- Typography.bodyMedium (title)
-- Typography.labelSmall (due date)
+- **Backgrounds**: `colors.backgroundSecondary` (white card)
+- **Status Indicator**: `colors.border` (inactive), `colors.success` (completed)
+- **Typography**: `colors.text` (title), `colors.textSecondary` (description)
+- **Layout**: `spacing.sm` (16px padding), `spacing.xs` (8px margins)
+- **Typography Variants**: `bodyLarge` (title), `bodyMedium` (description)
+- **Icons**: `actionText` color for chevron-right
+- **Due Row**: `Due:` label + value in a row with 4px gap
+- **Background**: `colors.widgetContentArea` with `borderRadius: 16`
+- **Icon**: Chevron size 24 (`size="lg"`) with `colors.textSubtitle`
+- **Dash Colors**: `colors.redAlpha10`, `colors.yellowAlpha10`, `colors.greenAlpha10`

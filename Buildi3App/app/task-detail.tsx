@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "../theme";
@@ -14,6 +14,8 @@ import {
   TaskActionsBottomSheet,
 } from "../components/ui";
 import { DateTag } from "../components/ui/Tag";
+import { useTask, useTasks } from "../hooks/useTasks";
+import { Task, TaskStage } from "../lib/supabase/types";
 
 /**
  * Task Detail Screen - Detailed view for editing and managing tasks
@@ -32,22 +34,46 @@ import { DateTag } from "../components/ui/Tag";
 export default function TaskDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{
-    id: string;
-    title: string;
-    projectName?: string;
-    dueDate: string;
-    isCompleted?: string;
-  }>();
-
-  // Parse route parameters
+  
+  // Mobile-optimized navigation (ID-only parameters)
+  const params = useLocalSearchParams<{ id: string }>();
   const taskId = params.id;
-  const [taskTitle, setTaskTitle] = useState(params.title || "");
-  const [isCompleted, setIsCompleted] = useState(params.isCompleted === "true");
-  const [description, setDescription] = useState("");
+
+  // Fetch fresh data using task ID from database
+  const { task, loading, error, refreshTask } = useTask(taskId);
+  const { updateTask, updateTaskStage, updateTaskWithAI } = useTasks();
+
+  // Optimistic updates for better mobile UX
+  const [optimisticUpdates, setOptimisticUpdates] = useState<Partial<Task>>({});
+  const displayTask = { ...task, ...optimisticUpdates };
+
+  // Local state for form fields
+  const [taskTitle, setTaskTitle] = useState(displayTask?.title || "");
+  const [description, setDescription] = useState(displayTask?.description || "");
   const [newSubtask, setNewSubtask] = useState("");
   const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const dueDate = params.dueDate ? new Date(params.dueDate) : new Date();
+
+  // Update form fields when task loads
+  React.useEffect(() => {
+    if (task) {
+      setTaskTitle(task.title);
+      setDescription(task.description || "");
+    }
+  }, [task]);
+
+  // Construction-aware stage transitions
+  const allowedTransitions = useMemo(() => {
+    if (!displayTask?.stage) return [];
+    
+    const transitions: Record<TaskStage, TaskStage[]> = {
+      'not-started': ['in-progress', 'blocked'],
+      'in-progress': ['completed', 'blocked'],
+      'completed': [], // Terminal state
+      'blocked': ['not-started', 'in-progress'] // Can restart
+    };
+    
+    return transitions[displayTask.stage as TaskStage] || [];
+  }, [displayTask?.stage]);
 
   // Demo subtasks
   const [subtasks, setSubtasks] = useState([
@@ -95,13 +121,61 @@ export default function TaskDetailScreen() {
     },
   ];
 
+  // Optimistic update with rollback on error
+  const handleUpdateTask = useCallback(async (updates: Partial<Task>) => {
+    if (!task) return;
+    
+    // Optimistic update
+    setOptimisticUpdates(prev => ({ ...prev, ...updates }));
+    
+    try {
+      const { error: updateError } = await updateTaskWithAI(task.id, updates, true);
+      if (updateError) throw new Error(updateError);
+      
+      // Clear optimistic updates on success
+      setOptimisticUpdates({});
+      refreshTask(); // Refresh to get latest data
+    } catch (error: any) {
+      // Rollback optimistic updates
+      setOptimisticUpdates({});
+      Alert.alert('Update Failed', error.message || 'Failed to update task');
+    }
+  }, [task, updateTaskWithAI, refreshTask]);
+
+  // Construction-aware stage change handling
+  const handleStageChange = useCallback(async (newStage: TaskStage) => {
+    if (!allowedTransitions.includes(newStage)) {
+      Alert.alert('Invalid Transition', `Cannot change from ${displayTask?.stage} to ${newStage}`);
+      return;
+    }
+    
+    await handleUpdateTask({ stage: newStage });
+  }, [allowedTransitions, displayTask?.stage, handleUpdateTask]);
+
   const handleBack = () => {
     router.back();
   };
 
-  const handleMarkComplete = () => {
-    setIsCompleted(!isCompleted);
-  };
+  const handleMarkComplete = useCallback(() => {
+    if (!displayTask) return;
+    
+    const isCurrentlyCompleted = displayTask.stage === 'completed';
+    const nextStage: TaskStage = isCurrentlyCompleted ? 'in-progress' : 'completed';
+    
+    handleStageChange(nextStage);
+  }, [displayTask, handleStageChange]);
+
+  const handleTitleSave = useCallback(() => {
+    if (taskTitle !== task?.title) {
+      handleUpdateTask({ title: taskTitle });
+    }
+  }, [taskTitle, task?.title, handleUpdateTask]);
+
+  const handleDescriptionSave = useCallback(() => {
+    if (description !== task?.description) {
+      handleUpdateTask({ description });
+    }
+  }, [description, task?.description, handleUpdateTask]);
 
   const handleMoreOptions = () => {
     setShowActionsMenu(true);
@@ -165,6 +239,109 @@ export default function TaskDetailScreen() {
     );
   };
 
+  // Handle invalid task ID or navigation errors
+  if (!taskId) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Icon name="alert-triangle" size="lg" color="error" />
+          <Typography variant="h6" style={styles.errorTitle}>
+            Invalid Task
+          </Typography>
+          <Typography variant="bodyMedium" style={styles.errorText}>
+            This task link is not valid or has expired.
+          </Typography>
+          <Button 
+            title="Go to Tasks"
+            onPress={() => router.push('/(tabs)/tasks')}
+            style={styles.errorButton}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // Handle loading state
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Icon name="chevron-left" size="md" color="text" />
+            </TouchableOpacity>
+            <View style={styles.titleContainer}>
+              <Typography variant="h5" style={styles.headerTitle}>
+                Task Details
+              </Typography>
+            </View>
+          </View>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Typography variant="bodyMedium" style={styles.loadingText}>
+            Loading task details...
+          </Typography>
+        </View>
+      </View>
+    );
+  }
+
+  // Handle error state
+  if (error || !task) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Icon name="chevron-left" size="md" color="text" />
+            </TouchableOpacity>
+            <View style={styles.titleContainer}>
+              <Typography variant="h5" style={styles.headerTitle}>
+                Task Details
+              </Typography>
+            </View>
+          </View>
+        </View>
+        <View style={styles.errorContainer}>
+          <Icon name="alert-triangle" size="lg" color="error" />
+          <Typography variant="h6" style={styles.errorTitle}>
+            Task Not Found
+          </Typography>
+          <Typography variant="bodyMedium" style={styles.errorText}>
+            {error || "This task could not be found or you don't have permission to view it."}
+          </Typography>
+          <View style={styles.errorButtons}>
+            <Button 
+              title="Try Again"
+              onPress={refreshTask}
+              style={styles.errorButton}
+              variant="secondary"
+            />
+            <Button 
+              title="Go to Tasks"
+              onPress={() => router.push('/(tabs)/tasks')}
+              style={styles.errorButton}
+            />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  const isCompleted = displayTask.stage === 'completed';
+  const dueDate = displayTask.dueDate ? new Date(displayTask.dueDate) : new Date();
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -208,6 +385,7 @@ export default function TaskDetailScreen() {
                 label="Task Title"
                 value={taskTitle}
                 onChangeText={setTaskTitle}
+                onBlur={handleTitleSave}
                 placeholder="Enter task title"
                 state={taskTitle ? "filled" : "default"}
                 containerStyle={styles.titleInput}
@@ -240,7 +418,7 @@ export default function TaskDetailScreen() {
                   </Typography>
                 </View>
                 <Typography variant="bodyMedium" style={styles.assigneeText}>
-                  Federico Ostan...
+                  {displayTask.assigned_to ? 'Assigned User' : 'Unassigned'}
                 </Typography>
               </View>
             </View>
@@ -259,15 +437,50 @@ export default function TaskDetailScreen() {
         </View>
 
         {/* Project Section */}
-        {params.projectName && (
+        {displayTask.projectId && (
           <View style={styles.section}>
             <Typography variant="bodyMedium" style={styles.sectionTitle}>
-              My Tasks
+              Project
             </Typography>
             <View style={styles.projectRow}>
               <View style={styles.projectIndicator} />
-              <Typography variant="bodyMedium">{params.projectName}</Typography>
+              <Typography variant="bodyMedium">
+                {(displayTask as any).project?.name || 'Construction Project'}
+              </Typography>
             </View>
+          </View>
+        )}
+        
+        {/* Construction-specific details */}
+        {(displayTask.weather_dependent || displayTask.trade_required || displayTask.safety_notes) && (
+          <View style={styles.section}>
+            <Typography variant="bodyMedium" style={styles.sectionTitle}>
+              Construction Details
+            </Typography>
+            {displayTask.weather_dependent && (
+              <View style={styles.constructionDetail}>
+                <Icon name="cloud-drizzle" size="sm" color="textSecondary" />
+                <Typography variant="bodyMedium" style={styles.constructionDetailText}>
+                  Weather dependent task
+                </Typography>
+              </View>
+            )}
+            {displayTask.trade_required && (
+              <View style={styles.constructionDetail}>
+                <Icon name="tool" size="sm" color="textSecondary" />
+                <Typography variant="bodyMedium" style={styles.constructionDetailText}>
+                  Trade required: {displayTask.trade_required}
+                </Typography>
+              </View>
+            )}
+            {displayTask.safety_notes && (
+              <View style={styles.constructionDetail}>
+                <Icon name="shield" size="sm" color="error" />
+                <Typography variant="bodyMedium" style={styles.constructionDetailText}>
+                  Safety notes: {displayTask.safety_notes}
+                </Typography>
+              </View>
+            )}
           </View>
         )}
 
@@ -280,6 +493,7 @@ export default function TaskDetailScreen() {
             label="Description"
             value={description}
             onChangeText={setDescription}
+            onBlur={handleDescriptionSave}
             placeholder="Add a description..."
             multiline={true}
             numberOfLines={4}
@@ -596,5 +810,59 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     minHeight: 80,
+  },
+  
+  // Error and Loading States
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  errorTitle: {
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  errorText: {
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  errorButton: {
+    marginTop: spacing.sm,
+    minWidth: 120,
+  },
+  errorButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  
+  // Construction-specific details
+  constructionDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 8,
+  },
+  constructionDetailText: {
+    color: colors.text,
+    flex: 1,
   },
 });

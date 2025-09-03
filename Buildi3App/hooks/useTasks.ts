@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase/client'
 import { Tables, Task, TaskStage, TypeConverters } from '../lib/supabase/types'
 import { TaskRowProps } from '../components/ui/TaskRow/types'
 import { useAuth } from './useAuth'
+import { constructionTaskEngine, WorkerContext, TaskPrediction } from '../lib/ai/constructionTaskEngine'
 
 // Database task type for internal use
 type DbTask = Tables<'tasks'>
@@ -14,6 +15,16 @@ interface UseTasksOptions {
   includeCompleted?: boolean
   orderBy?: 'title' | 'due_date' | 'created_at' | 'priority'
   orderDirection?: 'asc' | 'desc'
+  
+  // Construction-specific AI options
+  weatherConditions?: 'good' | 'poor' | 'extreme'
+  crewAvailability?: boolean
+  materialStatus?: 'available' | 'pending' | 'unavailable'
+  
+  // Mobile optimization options  
+  staleTime?: number       // Cache duration (default: 5 min)
+  cacheTime?: number       // Offline cache (default: 30 min)
+  enableOfflineQueue?: boolean // Queue updates when offline
 }
 
 export const useTasks = (options: UseTasksOptions = {}) => {
@@ -303,6 +314,187 @@ export const useTasks = (options: UseTasksOptions = {}) => {
     return tasksByStage
   }
 
+  // AI-enhanced methods that work with existing data
+  const getWorkerContext = useCallback((): WorkerContext => {
+    const {
+      weatherConditions = 'good',
+      crewAvailability = true,
+      materialStatus = 'available'
+    } = options;
+
+    return {
+      weather: weatherConditions,
+      crew: {
+        available: crewAvailability,
+        skills: profile?.trade_specialty ? [profile.trade_specialty] : ['general']
+      },
+      materials: {
+        available: materialStatus === 'available' ? ['concrete', 'steel', 'lumber'] : [],
+        pending: materialStatus === 'pending' ? ['concrete', 'steel'] : []
+      },
+      safetyLevel: 'normal',
+      timeOfDay: new Date().getHours()
+    };
+  }, [options, profile]);
+
+  const getAIPrioritizedTasks = useCallback(async (context?: WorkerContext): Promise<Task[]> => {
+    if (!tasks?.length) return [];
+    
+    try {
+      const workerContext = context || getWorkerContext();
+      return await constructionTaskEngine.prioritizeTasks(tasks, workerContext);
+    } catch (error) {
+      console.warn('🤖 AI prioritization failed, using original order:', error);
+      // Fallback to existing sorting logic
+      return [...tasks].sort((a, b) => {
+        const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        const priorityDiff = (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - 
+                            (priorityOrder[a.priority as keyof typeof priorityOrder] || 0);
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        if (a.dueDate && b.dueDate) {
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        return 0;
+      });
+    }
+  }, [tasks, getWorkerContext]);
+
+  const getNextTaskForWorker = useCallback(async (context?: WorkerContext): Promise<Task | null> => {
+    if (!tasks?.length) return null;
+    
+    try {
+      const workerContext = context || getWorkerContext();
+      return await constructionTaskEngine.getNextTask(tasks, workerContext);
+    } catch (error) {
+      console.warn('🤖 AI next task selection failed, using fallback:', error);
+      // Fallback to first non-completed task
+      return tasks.find(task => 
+        task.stage !== 'completed' && 
+        task.stage !== 'blocked'
+      ) || null;
+    }
+  }, [tasks, getWorkerContext]);
+
+  const predictTaskLifecycle = useCallback(async (taskId: string, context?: WorkerContext): Promise<TaskPrediction | null> => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return null;
+    
+    try {
+      const workerContext = context || getWorkerContext();
+      return await constructionTaskEngine.predictTaskLifecycle(task, workerContext);
+    } catch (error) {
+      console.warn('🤖 AI lifecycle prediction failed:', error);
+      // Return basic prediction
+      const now = new Date();
+      const daysToComplete = Math.ceil((task.estimated_hours || 8) / 8);
+      const predictedCompletion = new Date(now.getTime() + daysToComplete * 24 * 60 * 60 * 1000);
+      
+      return {
+        predictedCompletion,
+        riskFactors: task.weather_dependent ? ['Weather dependent'] : [],
+        recommendedActions: [],
+        confidenceScore: 0.5,
+        bottleneckLikelihood: 0.2
+      };
+    }
+  }, [tasks, getWorkerContext]);
+
+  const getConstructionFilteredTasks = useCallback((weather?: string, crew?: boolean, materials?: string): Task[] => {
+    if (!tasks?.length) return [];
+    
+    return tasks.filter(task => {
+      // Filter by weather conditions
+      if (weather === 'poor' && task.weather_dependent) return false;
+      
+      // Filter by crew availability
+      if (crew === false && task.trade_required && task.trade_required !== 'general') return false;
+      
+      // Filter by material status  
+      if (materials === 'unavailable' && task.materials_needed) {
+        const needed = Array.isArray(task.materials_needed) ? task.materials_needed : [];
+        if (needed.length > 0) return false;
+      }
+      
+      return true;
+    });
+  }, [tasks]);
+
+  // Memoized AI-enhanced task computations for performance
+  const upcomingTasks = useMemo(() => {
+    if (!tasks?.length) return [];
+    
+    return tasks
+      .filter(task => task.stage !== 'completed' && task.stage !== 'blocked')
+      .sort((a, b) => {
+        // Construction-specific priority logic
+        const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        const priorityDiff = (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - 
+                            (priorityOrder[a.priority as keyof typeof priorityOrder] || 0);
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        const dateOrder = new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
+        return dateOrder;
+      })
+      .slice(0, 5); // Increased from 3 to 5 for construction workflows
+  }, [tasks]);
+
+  // Offline task updates queue (for future implementation)
+  const [offlineQueue] = useState<Array<{taskId: string, update: Partial<Task>}>>([]);
+
+  const queueOfflineUpdate = useCallback((taskId: string, update: Partial<Task>) => {
+    if (options.enableOfflineQueue) {
+      offlineQueue.push({ taskId, update });
+      console.log('🔄 Queued offline update:', taskId, update);
+    }
+  }, [options.enableOfflineQueue, offlineQueue]);
+
+  const syncOfflineChanges = useCallback(async () => {
+    if (offlineQueue.length === 0) return;
+    
+    console.log('🔄 Syncing', offlineQueue.length, 'offline changes...');
+    
+    for (const { taskId, update } of offlineQueue) {
+      try {
+        await updateTask(taskId, update);
+      } catch (error) {
+        console.error('Failed to sync offline update:', taskId, error);
+      }
+    }
+    
+    // Clear queue after sync
+    offlineQueue.length = 0;
+  }, [offlineQueue, updateTask]);
+
+  // Enhanced task update with optimistic UI and conflict resolution
+  const updateTaskWithAI = useCallback(async (taskId: string, updates: Partial<Task>, optimistic = true) => {
+    // Optimistic update for immediate UI feedback
+    if (optimistic) {
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? { ...task, ...updates } : task
+      ));
+    }
+
+    try {
+      const result = await updateTask(taskId, updates);
+      if (result.error && optimistic) {
+        // Rollback optimistic update on error
+        setTasks(prev => prev.map(task => 
+          task.id === taskId ? tasks.find(t => t.id === taskId) || task : task
+        ));
+      }
+      return result;
+    } catch (error) {
+      if (optimistic) {
+        // Rollback optimistic update on error
+        setTasks(prev => prev.map(task => 
+          task.id === taskId ? tasks.find(t => t.id === taskId) || task : task
+        ));
+      }
+      throw error;
+    }
+  }, [updateTask, tasks]);
+
   return {
     tasks,
     loading,
@@ -316,6 +508,23 @@ export const useTasks = (options: UseTasksOptions = {}) => {
     // UI helper methods
     getTasksForUI,
     getTasksByStage,
+    
+    // AI-enhanced methods
+    getAIPrioritizedTasks,
+    getNextTaskForWorker,
+    predictTaskLifecycle,
+    getConstructionFilteredTasks,
+    
+    // Construction-optimized computed values
+    upcomingTasks,
+    
+    // Offline support methods
+    queueOfflineUpdate,
+    syncOfflineChanges,
+    updateTaskWithAI,
+    
+    // Context helper
+    getWorkerContext,
   }
 }
 

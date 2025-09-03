@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
 
 #### **1. "Think-First" Pattern (Anthropic Best Practice)**
 ```
-Complex Task → ultrathink → plan → implement → test → commit
+Complex Task → ultrathink → plan → implement → test → QA validation → commit
 ```
 
 #### **2. Component Development Workflow**
@@ -350,7 +350,8 @@ Complex Task → ultrathink → plan → implement → test → commit
 3. Follow atomic design principles
 4. Implement with design tokens
 5. Add comprehensive tests
-6. Document with README template
+6. QA Testing Specialist validation (MANDATORY FINAL STEP)
+7. Document with README template
 ```
 
 #### **3. Feature Implementation Pattern**
@@ -360,16 +361,44 @@ Complex Task → ultrathink → plan → implement → test → commit
 3. Backend integration
 4. Frontend components
 5. Testing and validation
-6. Documentation updates
+6. QA Testing Specialist validation (MANDATORY FINAL STEP)
+7. Documentation updates
 ```
 
-#### **4. Bug Resolution Workflow**
+#### **4. QA Testing Specialist Workflow (MANDATORY)**
+```
+CRITICAL: QA Testing Specialist must be used as the FINAL step of EVERY development session
+
+When to use:
+- After implementing any new feature
+- After making significant code changes  
+- Before considering any task "complete"
+- After fixing bugs or addressing issues
+
+What QA validates:
+- Implementation completeness and correctness
+- Edge cases and error handling
+- Security vulnerabilities and data validation
+- Performance considerations and optimizations
+- Mobile-specific concerns (offline, battery, etc.)
+- Integration points and data flow
+- User experience and accessibility
+
+QA provides:
+- Comprehensive test plans and scenarios
+- Critical issue identification with severity levels
+- Specific recommendations for production readiness
+- Code quality validation and improvements suggestions
+```
+
+#### **5. Bug Resolution Workflow**
 ```
 1. QA Testing Specialist for analysis
 2. Identify root cause with logs
 3. Implement defensive programming fixes
 4. Add test cases to prevent regression
-5. Update relevant documentation
+5. QA Testing Specialist validation (re-test)
+6. Update relevant documentation
 ```
 
 ---

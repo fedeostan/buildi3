@@ -11,9 +11,16 @@ import { Typography } from "../../components/ui";
 import type { NextTask } from "../../components/ui/NextTaskContainer/types";
 import type { TaskFilterPeriod } from "../../components/ui/UpcomingTaskWidget/types";
 import { useProjects } from "../../hooks/useProjects";
+import { useTasks } from "../../hooks/useTasks";
 import { useAuth } from "../../hooks/useAuth";
 import type { Project, Task } from "../../lib/supabase/types";
 import { getDisplayName } from "../../utils/userUtils";
+import { 
+  useConstructionNetworkStatus, 
+  useConstructionAppLifecycle,
+  ConstructionOfflineStorage,
+  ConstructionLoadingMessages 
+} from "../../utils/constructionSiteSupport";
 
 /**
  * Home Screen - Main app dashboard
@@ -28,6 +35,15 @@ export default function HomeScreen() {
   const [filterPeriod, setFilterPeriod] =
     React.useState<TaskFilterPeriod>("Today");
 
+  // Construction site support - offline resilience and app lifecycle management
+  const {
+    isAppActive,
+    networkInfo,
+    offlineStorage,
+    shouldPauseRealTimeUpdates,
+    shouldUseReducedBandwidth,
+  } = useConstructionAppLifecycle();
+
   // Load real project data
   const {
     projects: dbProjects,
@@ -39,6 +55,56 @@ export default function HomeScreen() {
     orderBy: 'updated_at',
     orderDirection: 'desc'
   });
+
+  // Load real task data with construction AI optimization
+  const {
+    tasks: allTasks,
+    loading: tasksLoading,
+    error: tasksError,
+    upcomingTasks, // AI-enhanced upcoming tasks (max 5 for construction)
+    getNextTaskForWorker,
+    getWorkerContext,
+  } = useTasks({
+    includeCompleted: false,
+    orderBy: 'due_date',
+    orderDirection: 'asc',
+    // Construction site optimization
+    weatherConditions: 'good', // TODO: Get from weather API
+    crewAvailability: true,
+    materialStatus: 'available',
+    // Mobile optimization
+    staleTime: 5 * 60 * 1000, // 5 min cache for construction sites
+    cacheTime: 30 * 60 * 1000, // 30 min offline support
+    enableOfflineQueue: true,
+  });
+
+  // AI-enhanced next task state
+  const [nextTask, setNextTask] = React.useState<Task | null>(null);
+  const [nextTaskLoading, setNextTaskLoading] = React.useState(false);
+
+  // Get AI-recommended next task
+  React.useEffect(() => {
+    if (!allTasks?.length || tasksLoading) return;
+
+    const getNextTask = async () => {
+      setNextTaskLoading(true);
+      try {
+        const workerContext = getWorkerContext();
+        const aiNextTask = await getNextTaskForWorker(workerContext);
+        setNextTask(aiNextTask);
+      } catch (error) {
+        console.warn('Failed to get AI next task, using first available:', error);
+        // Fallback to first non-completed task
+        const fallbackTask = allTasks.find(task => 
+          task.stage !== 'completed' && task.stage !== 'blocked'
+        );
+        setNextTask(fallbackTask || null);
+      }
+      setNextTaskLoading(false);
+    };
+
+    getNextTask();
+  }, [allTasks, tasksLoading, getNextTaskForWorker, getWorkerContext]);
 
   // Transform database projects to UI format
   const uiProjects: Project[] = dbProjects.map(dbProject => ({
@@ -114,6 +180,28 @@ export default function HomeScreen() {
     // TODO: Navigate to project detail screen
   };
 
+  // Task navigation handlers - ID-based for mobile optimization
+  const navigateToTask = React.useCallback((taskId: string) => {
+    router.push({
+      pathname: '/task-detail/[id]',
+      params: { id: taskId }
+    });
+  }, [router]);
+
+  const handleViewTask = () => {
+    if (nextTask?.id) {
+      navigateToTask(nextTask.id);
+    }
+  };
+
+  const handleTaskPress = (taskId: string) => {
+    navigateToTask(taskId);
+  };
+
+  const handleViewAllTasks = () => {
+    router.push('/(tabs)/tasks');
+  };
+
   return (
     <View style={[styles.container, dynamicStyles.container]}>
       {/* Main Content Area - Scrollable, including header */}
@@ -131,19 +219,41 @@ export default function HomeScreen() {
           onNotificationPress={handleNotificationPress}
           style={{ marginBottom: spacing.sm }} // Add spacing below header
         />
-        {/* Next Task Widget - Single widget that changes content based on hasTask */}
-        <NextTaskWidget
-          hasTask={true} // Change this to false to see "No upcoming tasks!" state
-          task={{
-            id: "task-1",
-            title: "Review architectural plans and blueprints",
-            projectName: "Office Building Renovation",
-            taskTitle: "Review architectural plans and blueprints",
-            dueDate: new Date(),
-          } as NextTask}
-          onViewTask={() => console.log("View task pressed")}
-          style={{ marginBottom: spacing.md }}
-        />
+        {/* Next Task Widget - AI-prioritized construction-optimized task */}
+        {tasksLoading || nextTaskLoading ? (
+          <View style={[styles.loadingWidget, { marginBottom: spacing.md }]}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Typography variant="bodyMedium" style={styles.loadingText}>
+              Finding your next task...
+            </Typography>
+          </View>
+        ) : tasksError ? (
+          <View style={[styles.errorWidget, { marginBottom: spacing.md }]}>
+            <Typography variant="bodyMedium" style={styles.errorText}>
+              Unable to load tasks: {tasksError}
+            </Typography>
+          </View>
+        ) : (
+          <NextTaskWidget
+            hasTask={!!nextTask}
+            task={nextTask ? {
+              id: nextTask.id,
+              title: nextTask.title,
+              projectName: "Construction Project", // TODO: Get from project join
+              taskTitle: nextTask.title,
+              dueDate: nextTask.dueDate ? new Date(nextTask.dueDate) : new Date(),
+            } as NextTask : undefined}
+            onViewTask={handleViewTask}
+            style={{ marginBottom: spacing.md }}
+            // AI context indicators (new optional props)
+            showWeatherContext={nextTask?.weather_dependent}
+            showMaterialStatus={!!nextTask?.materials_needed}
+            aiPriorityReason={nextTask ? "AI optimized for construction workflow" : undefined}
+            // Construction site indicators
+            offlineMode={networkInfo.isOffline}
+            showConnectivityStatus={true}
+          />
+        )}
 
         {/* Projects Widget - Shows real projects from database */}
         {projectsLoading ? (
@@ -169,35 +279,26 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* Upcoming Tasks Widget */}
+        {/* Upcoming Tasks Widget - Construction-optimized with AI filtering (max 5 tasks) */}
         <UpcomingTaskWidget
-          tasks={[
-            {
-              id: "task-1",
-              title: "Review architectural plans and blueprints",
-              dueDate: new Date(),
-              stage: "not-started",
-              isCompleted: false,
-            } as Task,
-            {
-              id: "task-2",
-              title: "Coordinate with electrical contractor",
-              dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-              stage: "not-started",
-              isCompleted: false,
-            } as Task,
-            {
-              id: "task-3",
-              title: "Finalize material selections",
-              dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // Day after tomorrow
-              stage: "not-started",
-              isCompleted: false,
-            } as Task,
-          ]}
+          tasks={upcomingTasks || []}
           selectedPeriod={filterPeriod}
           onFilterChange={(period) => setFilterPeriod(period)}
-          onTaskPress={(taskId) => console.log(`Task pressed: ${taskId}`)}
-          onViewAllPress={() => console.log("View all tasks pressed")}
+          onTaskPress={handleTaskPress}
+          onViewAllPress={handleViewAllTasks}
+          loading={tasksLoading}
+          error={tasksError}
+          // Construction site indicators
+          showOfflineIndicator={networkInfo.isOffline}
+          networkStatus={networkInfo}
+          pendingSyncCount={offlineStorage.getPendingCount()}
+          emptyStateMessage={
+            tasksLoading 
+              ? ConstructionLoadingMessages.loading
+              : networkInfo.isOffline
+              ? "Working offline with cached tasks. Changes will sync when connection returns."
+              : "No upcoming tasks found. Great job staying on top of your work!"
+          }
         />
       </ScrollView>
     </View>
