@@ -1,5 +1,12 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "../../theme";
@@ -34,9 +41,9 @@ import { Task, TaskStage } from "../../lib/supabase/types";
 export default function TaskDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  
+
   // Mobile-optimized navigation (ID-only parameters)
-  const params = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; projectName?: string }>();
   const taskId = params.id;
 
   // Fetch fresh data using task ID from database
@@ -47,9 +54,17 @@ export default function TaskDetailScreen() {
   const [optimisticUpdates, setOptimisticUpdates] = useState<Partial<Task>>({});
   const displayTask = { ...task, ...optimisticUpdates };
 
+  // Project name (prefer task.project.name, then param, then fallback)
+  const projectName =
+    ((displayTask as any)?.project?.name as string) ||
+    (params.projectName as string) ||
+    "Construction Project";
+
   // Local state for form fields
   const [taskTitle, setTaskTitle] = useState(displayTask?.title || "");
-  const [description, setDescription] = useState(displayTask?.description || "");
+  const [description, setDescription] = useState(
+    displayTask?.description || ""
+  );
   const [newSubtask, setNewSubtask] = useState("");
   const [showActionsMenu, setShowActionsMenu] = useState(false);
 
@@ -64,14 +79,14 @@ export default function TaskDetailScreen() {
   // Construction-aware stage transitions
   const allowedTransitions = useMemo(() => {
     if (!displayTask?.stage) return [];
-    
+
     const transitions: Record<TaskStage, TaskStage[]> = {
-      'not-started': ['in-progress', 'blocked'],
-      'in-progress': ['completed', 'blocked'],
-      'completed': [], // Terminal state
-      'blocked': ['not-started', 'in-progress'] // Can restart
+      "not-started": ["in-progress", "blocked"],
+      "in-progress": ["completed", "blocked"],
+      completed: [], // Terminal state
+      blocked: ["not-started", "in-progress"], // Can restart
     };
-    
+
     return transitions[displayTask.stage as TaskStage] || [];
   }, [displayTask?.stage]);
 
@@ -80,14 +95,14 @@ export default function TaskDetailScreen() {
     {
       id: "subtask-1",
       title: "Research user requirements",
-      projectName: params.projectName,
+      projectName,
       dueDate: new Date(),
       isCompleted: true,
     },
     {
       id: "subtask-2",
       title: "Create wireframes",
-      projectName: params.projectName,
+      projectName,
       dueDate: new Date(),
       isCompleted: false,
     },
@@ -104,7 +119,7 @@ export default function TaskDetailScreen() {
     {
       id: "activity-2",
       user: "Federico Ostan Bazan",
-      action: `added to ${params.projectName}`,
+      action: `added to ${projectName}`,
       timestamp: "1 Aug 2024",
     },
     {
@@ -122,35 +137,48 @@ export default function TaskDetailScreen() {
   ];
 
   // Optimistic update with rollback on error
-  const handleUpdateTask = useCallback(async (updates: Partial<Task>) => {
-    if (!task) return;
-    
-    // Optimistic update
-    setOptimisticUpdates(prev => ({ ...prev, ...updates }));
-    
-    try {
-      const { error: updateError } = await updateTaskWithAI(task.id, updates, true);
-      if (updateError) throw new Error(updateError);
-      
-      // Clear optimistic updates on success
-      setOptimisticUpdates({});
-      refreshTask(); // Refresh to get latest data
-    } catch (error: any) {
-      // Rollback optimistic updates
-      setOptimisticUpdates({});
-      Alert.alert('Update Failed', error.message || 'Failed to update task');
-    }
-  }, [task, updateTaskWithAI, refreshTask]);
+  const handleUpdateTask = useCallback(
+    async (updates: Partial<Task>) => {
+      if (!task) return;
+
+      // Optimistic update
+      setOptimisticUpdates((prev) => ({ ...prev, ...updates }));
+
+      try {
+        const { error: updateError } = await updateTaskWithAI(
+          task.id,
+          updates,
+          true
+        );
+        if (updateError) throw new Error(updateError);
+
+        // Clear optimistic updates on success
+        setOptimisticUpdates({});
+        refreshTask(); // Refresh to get latest data
+      } catch (error: any) {
+        // Rollback optimistic updates
+        setOptimisticUpdates({});
+        Alert.alert("Update Failed", error.message || "Failed to update task");
+      }
+    },
+    [task, updateTaskWithAI, refreshTask]
+  );
 
   // Construction-aware stage change handling
-  const handleStageChange = useCallback(async (newStage: TaskStage) => {
-    if (!allowedTransitions.includes(newStage)) {
-      Alert.alert('Invalid Transition', `Cannot change from ${displayTask?.stage} to ${newStage}`);
-      return;
-    }
-    
-    await handleUpdateTask({ stage: newStage });
-  }, [allowedTransitions, displayTask?.stage, handleUpdateTask]);
+  const handleStageChange = useCallback(
+    async (newStage: TaskStage) => {
+      if (!allowedTransitions.includes(newStage)) {
+        Alert.alert(
+          "Invalid Transition",
+          `Cannot change from ${displayTask?.stage} to ${newStage}`
+        );
+        return;
+      }
+
+      await handleUpdateTask({ stage: newStage });
+    },
+    [allowedTransitions, displayTask?.stage, handleUpdateTask]
+  );
 
   const handleBack = () => {
     router.back();
@@ -158,10 +186,12 @@ export default function TaskDetailScreen() {
 
   const handleMarkComplete = useCallback(() => {
     if (!displayTask) return;
-    
-    const isCurrentlyCompleted = displayTask.stage === 'completed';
-    const nextStage: TaskStage = isCurrentlyCompleted ? 'in-progress' : 'completed';
-    
+
+    const isCurrentlyCompleted = displayTask.stage === "completed";
+    const nextStage: TaskStage = isCurrentlyCompleted
+      ? "in-progress"
+      : "completed";
+
     handleStageChange(nextStage);
   }, [displayTask, handleStageChange]);
 
@@ -220,7 +250,7 @@ export default function TaskDetailScreen() {
       const newSubtaskItem = {
         id: `subtask-${Date.now()}`,
         title: newSubtask.trim(),
-        projectName: params.projectName,
+        projectName,
         dueDate: new Date(),
         isCompleted: false,
       };
@@ -251,9 +281,9 @@ export default function TaskDetailScreen() {
           <Typography variant="bodyMedium" style={styles.errorText}>
             This task link is not valid or has expired.
           </Typography>
-          <Button 
+          <Button
             title="Go to Tasks"
-            onPress={() => router.push('/(tabs)/tasks')}
+            onPress={() => router.push("/(tabs)/tasks")}
             style={styles.errorButton}
           />
         </View>
@@ -319,18 +349,19 @@ export default function TaskDetailScreen() {
             Task Not Found
           </Typography>
           <Typography variant="bodyMedium" style={styles.errorText}>
-            {error || "This task could not be found or you don't have permission to view it."}
+            {error ||
+              "This task could not be found or you don't have permission to view it."}
           </Typography>
           <View style={styles.errorButtons}>
-            <Button 
+            <Button
               title="Try Again"
               onPress={refreshTask}
               style={styles.errorButton}
               variant="secondary"
             />
-            <Button 
+            <Button
               title="Go to Tasks"
-              onPress={() => router.push('/(tabs)/tasks')}
+              onPress={() => router.push("/(tabs)/tasks")}
               style={styles.errorButton}
             />
           </View>
@@ -339,8 +370,10 @@ export default function TaskDetailScreen() {
     );
   }
 
-  const isCompleted = displayTask.stage === 'completed';
-  const dueDate = displayTask.dueDate ? new Date(displayTask.dueDate) : new Date();
+  const isCompleted = displayTask.stage === "completed";
+  const dueDate = displayTask.dueDate
+    ? new Date(displayTask.dueDate)
+    : new Date();
 
   return (
     <View style={styles.container}>
@@ -418,7 +451,7 @@ export default function TaskDetailScreen() {
                   </Typography>
                 </View>
                 <Typography variant="bodyMedium" style={styles.assigneeText}>
-                  {displayTask.assigned_to ? 'Assigned User' : 'Unassigned'}
+                  {displayTask.assigned_to ? "Assigned User" : "Unassigned"}
                 </Typography>
               </View>
             </View>
@@ -445,14 +478,16 @@ export default function TaskDetailScreen() {
             <View style={styles.projectRow}>
               <View style={styles.projectIndicator} />
               <Typography variant="bodyMedium">
-                {(displayTask as any).project?.name || 'Construction Project'}
+                {(displayTask as any).project?.name || "Construction Project"}
               </Typography>
             </View>
           </View>
         )}
-        
+
         {/* Construction-specific details */}
-        {(displayTask.weather_dependent || displayTask.trade_required || displayTask.safety_notes) && (
+        {(displayTask.weather_dependent ||
+          displayTask.trade_required ||
+          displayTask.safety_notes) && (
           <View style={styles.section}>
             <Typography variant="bodyMedium" style={styles.sectionTitle}>
               Construction Details
@@ -460,7 +495,10 @@ export default function TaskDetailScreen() {
             {displayTask.weather_dependent && (
               <View style={styles.constructionDetail}>
                 <Icon name="cloud-drizzle" size="sm" color="textSecondary" />
-                <Typography variant="bodyMedium" style={styles.constructionDetailText}>
+                <Typography
+                  variant="bodyMedium"
+                  style={styles.constructionDetailText}
+                >
                   Weather dependent task
                 </Typography>
               </View>
@@ -468,7 +506,10 @@ export default function TaskDetailScreen() {
             {displayTask.trade_required && (
               <View style={styles.constructionDetail}>
                 <Icon name="tool" size="sm" color="textSecondary" />
-                <Typography variant="bodyMedium" style={styles.constructionDetailText}>
+                <Typography
+                  variant="bodyMedium"
+                  style={styles.constructionDetailText}
+                >
                   Trade required: {displayTask.trade_required}
                 </Typography>
               </View>
@@ -476,7 +517,10 @@ export default function TaskDetailScreen() {
             {displayTask.safety_notes && (
               <View style={styles.constructionDetail}>
                 <Icon name="shield" size="sm" color="error" />
-                <Typography variant="bodyMedium" style={styles.constructionDetailText}>
+                <Typography
+                  variant="bodyMedium"
+                  style={styles.constructionDetailText}
+                >
                   Safety notes: {displayTask.safety_notes}
                 </Typography>
               </View>
@@ -811,23 +855,23 @@ const styles = StyleSheet.create({
   commentInput: {
     minHeight: 80,
   },
-  
+
   // Error and Loading States
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing.lg,
   },
   errorTitle: {
     marginTop: spacing.md,
     marginBottom: spacing.sm,
     color: colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorText: {
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.lg,
   },
   errorButton: {
@@ -835,26 +879,26 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   errorButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.sm,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing.lg,
   },
   loadingText: {
     marginTop: spacing.md,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
-  
+
   // Construction-specific details
   constructionDetail: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
     marginBottom: spacing.sm,
     padding: spacing.sm,

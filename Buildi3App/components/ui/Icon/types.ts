@@ -1,65 +1,13 @@
 import { ColorName } from "../../../theme";
+import type { ComponentProps } from "react";
+import { Feather } from "@expo/vector-icons";
 
 // Available icon sizes - following design system principles
 export type IconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 
 // Feather icon names (most commonly used ones)
 // You can extend this list as needed
-export type FeatherIconName =
-  | "activity"
-  | "alert-circle"
-  | "arrow-left"
-  | "arrow-right"
-  | "arrow-up"
-  | "arrow-down"
-  | "bell"
-  | "bookmark"
-  | "calendar"
-  | "camera"
-  | "check"
-  | "chevron-down"
-  | "chevron-left"
-  | "chevron-right"
-  | "chevron-up"
-  | "clock"
-  | "copy"
-  | "download"
-  | "edit"
-  | "eye"
-  | "eye-off"
-  | "heart"
-  | "home"
-  | "info"
-  | "mail"
-  | "menu"
-  | "more-horizontal"
-  | "more-vertical"
-  | "phone"
-  | "plus"
-  | "search"
-  | "settings"
-  | "share"
-  | "shopping-bag"
-  | "shopping-cart"
-  | "star"
-  | "trash"
-  | "user"
-  | "users"
-  | "x"
-  | "check-circle"
-  | "check-square"
-  | "message-square"
-  | "alert-triangle"
-  | "help-circle"
-  | "lock"
-  | "unlock"
-  | "upload"
-  | "filter"
-  | "list"
-  | "folder"
-  | "folder-plus"
-  | "bell-off"
-  | "log-out";
+export type FeatherIconName = ComponentProps<typeof Feather>["name"];
 
 export interface IconProps {
   /** The Feather icon name to display */
