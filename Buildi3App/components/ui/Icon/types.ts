@@ -58,7 +58,8 @@ export type FeatherIconName =
   | "list"
   | "folder"
   | "folder-plus"
-  | "bell-off";
+  | "bell-off"
+  | "log-out";
 
 export interface IconProps {
   /** The Feather icon name to display */

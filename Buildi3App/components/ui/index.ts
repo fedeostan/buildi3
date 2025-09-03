@@ -10,6 +10,8 @@ export { default as Button } from "./Button";
 // Profile & Notification atoms (Atomic Design)
 export { default as ProfileIcon } from "./ProfileIcon";
 export { default as NotificationIcon } from "./NotificationIcon";
+export { UserAvatar } from "./UserAvatar";
+export type { UserAvatarProps } from "./UserAvatar";
 
 // Dashboard organism (Atomic Design)
 export { default as DashboardHeader } from "./DashboardHeader";
@@ -59,9 +61,11 @@ export type { BottomTabBarProps, TabBarItem } from "./BottomTabBar";
 
 // Menu components (Atomic Design - Atoms & Organisms)
 export { default as MenuButton } from "./MenuButton";
+export { MenuListItem } from "./MenuListItem";
 export { default as MenuBottomSheet } from "./MenuBottomSheet";
 export { default as GeneralHeader } from "./GeneralHeader";
 export type { MenuButtonProps } from "./MenuButton";
+export type { MenuListItemProps } from "./MenuListItem";
 export type {
   MenuOption,
   MenuSection,

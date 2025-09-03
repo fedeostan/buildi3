@@ -27,4 +27,9 @@ export const styles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: "center",
   },
+
+  // Last item style (no margin bottom)
+  lastItem: {
+    marginBottom: 0,
+  },
 });

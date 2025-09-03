@@ -5,6 +5,7 @@ import ProfileIcon from "../ProfileIcon";
 import NotificationIcon from "../NotificationIcon";
 import { styles } from "./styles";
 import type { DashboardHeaderProps } from "./types";
+import { extractUserInitials, extractFirstName } from "../../../utils/userUtils";
 
 /**
  * DashboardHeader Organism Component
@@ -66,30 +67,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
   };
 
-  // Extract initials from user name
-  const extractInitials = (fullName: string): string => {
-    const names = fullName.trim().split(" ");
-
-    if (names.length === 0) return "U"; // Fallback for empty name
-    if (names.length === 1) return names[0].charAt(0).toUpperCase();
-
-    // First letter of first name + first letter of last name
-    const firstInitial = names[0].charAt(0).toUpperCase();
-    const lastInitial = names[names.length - 1].charAt(0).toUpperCase();
-
-    return firstInitial + lastInitial;
-  };
-
-  // Extract first name for greeting
-  const getFirstName = (fullName: string): string => {
-    const names = fullName.trim().split(" ");
-    return names[0] || "User";
-  };
-
   const displayDate = date || getCurrentDate();
   const greeting = getTimeBasedGreeting();
-  const firstName = getFirstName(userName);
-  const initials = extractInitials(userName);
+  const firstName = extractFirstName(null, userName);
+  const initials = extractUserInitials(null, null, userName);
 
   return (
     <View style={[styles.container, style]}>

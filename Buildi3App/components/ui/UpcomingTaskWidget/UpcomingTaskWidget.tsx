@@ -66,6 +66,25 @@ const UpcomingTaskWidget: React.FC<UpcomingTaskWidgetProps> = ({
   widgetProps,
   style,
 }) => {
+  // Defensive programming: Validate tasks array and filter out invalid tasks
+  const validTasks = React.useMemo(() => {
+    if (!Array.isArray(tasks)) {
+      console.error('UpcomingTaskWidget: tasks prop is not an array:', tasks);
+      return [];
+    }
+    
+    return tasks.filter(task => {
+      if (!task) {
+        console.warn('UpcomingTaskWidget: Found null/undefined task in tasks array');
+        return false;
+      }
+      if (!task.id || !task.title) {
+        console.warn('UpcomingTaskWidget: Found task missing required properties:', task);
+        return false;
+      }
+      return true;
+    });
+  }, [tasks]);
   // Ref for bottom sheet modal
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
@@ -192,7 +211,7 @@ const UpcomingTaskWidget: React.FC<UpcomingTaskWidgetProps> = ({
         {...widgetProps}
       >
         <TaskList
-          tasks={tasks}
+          tasks={validTasks}
           onTaskPress={onTaskPress}
           maxTasks={5}
           emptyStateMessage={`No tasks ${selectedPeriod.toLowerCase()}`}

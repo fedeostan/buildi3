@@ -36,9 +36,10 @@ After reading SESSION_INIT.md and running the general-purpose agent, you should 
 ## 🔧 IF CONTEXT ACQUISITION FAILS
 
 Try this recovery sequence:
-1. Read `/Users/federicoostan/buildi3/CLAUDE.md` 
-2. Read `/Users/federicoostan/buildi3/Planning/Epic3_Handoff_Documentation.md`
-3. Run the general-purpose agent again with this context
+1. Read `/Users/federicoostan/buildi3/Buildi3App/CLAUDE.md` 
+2. Read `/Users/federicoostan/buildi3/context/MASTER_LESSONS.md`
+3. Read `/Users/federicoostan/buildi3/Planning/ACCOMPLISHMENTS_SUMMARY.md`
+4. Run the general-purpose agent again with this context
 
 ---
 

@@ -45,6 +45,17 @@ const TaskItem: React.FC<TaskItemProps> = ({
   showDragHandle,
   accessibilityLabel,
 }) => {
+  // Defensive programming: Handle undefined task
+  if (!task) {
+    console.error('TaskItem: task prop is undefined. Component will not render.');
+    return null;
+  }
+
+  // Defensive programming: Handle missing required task properties
+  if (!task.id || !task.title) {
+    console.error('TaskItem: task missing required properties (id, title):', task);
+    return null;
+  }
   // Format the due date appropriately
   const formatDueDate = (date: Date | string | null) => {
     if (!date) return 'No date';

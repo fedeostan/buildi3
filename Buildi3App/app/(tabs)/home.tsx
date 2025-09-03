@@ -13,6 +13,7 @@ import type { TaskFilterPeriod } from "../../components/ui/UpcomingTaskWidget/ty
 import { useProjects } from "../../hooks/useProjects";
 import { useAuth } from "../../hooks/useAuth";
 import type { Project, Task } from "../../lib/supabase/types";
+import { getDisplayName } from "../../utils/userUtils";
 
 /**
  * Home Screen - Main app dashboard
@@ -23,7 +24,7 @@ import type { Project, Task } from "../../lib/supabase/types";
  */
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [filterPeriod, setFilterPeriod] =
     React.useState<TaskFilterPeriod>("Today");
 
@@ -123,7 +124,7 @@ export default function HomeScreen() {
       >
         {/* Dashboard Header with dynamic greeting and navigation */}
         <DashboardHeader
-          userName="Federico Ostan" // This will come from user context/auth later
+          userName={getDisplayName(profile, user?.email)}
           hasNotifications={true}
           notificationCount={3}
           onProfilePress={handleProfilePress}

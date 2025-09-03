@@ -58,9 +58,9 @@ const TaskList: React.FC<TaskListProps> = ({
       {limitedTasks.map((task, index) => (
         <TaskItem
           key={task.id}
-          {...task}
-          isLastItem={index === limitedTasks.length - 1}
-          onPress={() => onTaskPress && onTaskPress(task.id)}
+          task={task}
+          onTaskPress={onTaskPress ? () => onTaskPress(task.id) : undefined}
+          style={index === limitedTasks.length - 1 ? styles.lastItem : undefined}
         />
       ))}
     </View>

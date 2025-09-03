@@ -31,18 +31,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Helper function to fetch profile for a specific user
   // Centralizes profile fetching logic and prevents duplicates
-  const fetchProfileForUser = async (userId: string) => {
+  const fetchProfileForUser = async (userId: string, setLoadingToFalse: boolean = false) => {
     try {
-      console.log('Fetching profile for user:', userId)
-      const { profile: userProfile } = await authService.getCurrentProfile()
-      console.log('Profile loaded:', userProfile ? 'Success' : 'Not found')
-      setProfile(userProfile)
-    } catch (error) {
-      console.error('Failed to load profile:', error)
-      if (error instanceof Error && error.message?.includes('0 rows')) {
-        console.log('Profile not found - user may be in onboarding flow')
+      console.log('🔄 Fetching profile for user:', userId)
+      const startTime = Date.now()
+      
+      const { profile: userProfile, error } = await authService.getCurrentProfile()
+      const fetchTime = Date.now() - startTime
+      
+      if (error) {
+        console.error('❌ Profile fetch error:', error)
+        // Check if it's a "no profile found" error (user in onboarding)
+        if (error.message?.includes('0 rows') || error.message?.includes('No rows')) {
+          console.log('ℹ️ Profile not found - user may be in onboarding flow')
+          setProfile(null)
+        } else {
+          console.error('💥 Unexpected profile fetch error:', error)
+          setProfile(null)
+        }
+      } else {
+        console.log(`✅ Profile fetched successfully in ${fetchTime}ms:`, {
+          firstName: userProfile?.first_name,
+          lastName: userProfile?.last_name,
+          role: userProfile?.role,
+          isActive: userProfile?.is_active
+        })
+        setProfile(userProfile)
       }
+    } catch (error) {
+      console.error('💥 Profile fetch exception:', error)
       setProfile(null)
+    } finally {
+      // ALWAYS set loading to false when requested, regardless of success/failure
+      if (setLoadingToFalse) {
+        console.log('🏁 Setting loading to false - profile fetch operation completed')
+        setLoading(false)
+      }
     }
   }
 
@@ -75,15 +99,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Handle signed in states - set session and user immediately
         setSession(session)
         setUser(session?.user ?? null)
-        setLoading(false)
         
         // Profile loading is handled separately by fetchProfileForUser
         // This prevents duplicate API calls and race conditions
         if (session?.user?.email_confirmed_at) {
-          fetchProfileForUser(session.user.id)
+          console.log('🔄 Auth state change - fetching profile for confirmed user')
+          // Don't set loading to false until profile is fetched to prevent race conditions
+          // Use await to ensure profile fetch completes before proceeding
+          fetchProfileForUser(session.user.id, true)
         } else {
           console.log('User email not confirmed - clearing profile')
           setProfile(null)
+          setLoading(false)
         }
       }
 
@@ -123,6 +150,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(null)
         setSession(null)
         setProfile(null)
+        setLoading(false) // Set loading false here since no further async ops
       } else if (data.session) {
         console.log('✅ Initial session found:', data.session.user?.email)
         setSession(data.session)
@@ -130,26 +158,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         // Load profile if user is confirmed
         if (data.session.user?.email_confirmed_at) {
-          fetchProfileForUser(data.session.user.id)
+          console.log('🔄 Fetching profile for confirmed user...')
+          // Fetch profile and set loading to false after completion
+          // Don't set loading to false here - let fetchProfileForUser handle it
+          await fetchProfileForUser(data.session.user.id, true)
+          return // Exit early - loading state handled by fetchProfileForUser
         } else {
           console.log('⚠️ User email not confirmed - skipping profile load')
           setProfile(null)
+          setLoading(false) // Set loading false here since no further async ops
         }
       } else {
         console.log('ℹ️ No initial session found')
         setUser(null)
         setSession(null)
         setProfile(null)
+        setLoading(false) // Set loading false here since no further async ops
       }
     } catch (err) {
       console.error('❌ Auth initialization error:', err)
       setUser(null)
       setSession(null)
       setProfile(null)
-    } finally {
-      console.log('✅ Auth initialization completed')
-      setLoading(false)
+      setLoading(false) // Set loading false on error
     }
+    // Remove finally block - loading state is now handled explicitly in each path
+    console.log('✅ Auth initialization completed')
   }
 
   const signOut = async () => {
@@ -224,6 +258,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       hasProfile: !!profile,
       profileActive: profile?.is_active,
       profileComplete: !!(profile?.first_name && profile?.last_name && profile?.role),
+      profileData: profile ? {
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        role: profile.role,
+        isActive: profile.is_active
+      } : null,
       loading,
     }
   }
@@ -231,7 +271,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Log auth state changes for debugging
   useEffect(() => {
     if (!loading) {
-      console.log('🔍 Auth State Debug:', getAuthDebugInfo())
+      console.log('🔍 Auth State Debug (Final):', getAuthDebugInfo())
     }
   }, [user, profile, loading])
 
