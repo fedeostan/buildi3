@@ -28,4 +28,16 @@ export interface NextTaskWidgetProps {
   actionText?: string;
   /** Callback for title action button */
   onActionPress?: () => void;
+  /** Whether the widget is loading (shows loading state inside widget) */
+  isLoading?: boolean;
+  /** Whether to show weather context indicators */
+  showWeatherContext?: boolean;
+  /** Whether to show material status indicators */
+  showMaterialStatus?: boolean;
+  /** AI priority reason text */
+  aiPriorityReason?: string;
+  /** Whether offline mode is active */
+  offlineMode?: boolean;
+  /** Whether to show connectivity status */
+  showConnectivityStatus?: boolean;
 }

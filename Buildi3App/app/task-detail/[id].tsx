@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "../theme";
+import { colors, spacing } from "../../theme";
 import {
   Typography,
   Input,
@@ -12,10 +12,10 @@ import {
   TaskRow,
   Widget,
   TaskActionsBottomSheet,
-} from "../components/ui";
-import { DateTag } from "../components/ui/Tag";
-import { useTask, useTasks } from "../hooks/useTasks";
-import { Task, TaskStage } from "../lib/supabase/types";
+} from "../../components/ui";
+import { DateTag } from "../../components/ui/Tag";
+import { useTask, useTasks } from "../../hooks/useTasks";
+import { Task, TaskStage } from "../../lib/supabase/types";
 
 /**
  * Task Detail Screen - Detailed view for editing and managing tasks

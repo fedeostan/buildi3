@@ -59,7 +59,7 @@ const TaskList: React.FC<TaskListProps> = ({
         <TaskItem
           key={task.id}
           task={task}
-          onTaskPress={onTaskPress ? () => onTaskPress(task.id) : undefined}
+          onTaskPress={onTaskPress ? (task) => onTaskPress(task.id) : undefined}
           style={index === limitedTasks.length - 1 ? styles.lastItem : undefined}
         />
       ))}

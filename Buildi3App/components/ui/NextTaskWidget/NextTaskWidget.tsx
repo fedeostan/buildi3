@@ -1,7 +1,10 @@
-import React from "react";
+import React, { memo } from "react";
+import { View, ActivityIndicator } from "react-native";
 import { NextTaskWidgetProps } from "./types";
 import Widget from "../Widget";
 import NextTaskContainer from "../NextTaskContainer";
+import { Typography } from "../Typography";
+import { colors, spacing } from "@/theme";
 
 /**
  * NextTaskWidget Organism Component
@@ -30,7 +33,7 @@ import NextTaskContainer from "../NextTaskContainer";
  * @param actionText - Title action text
  * @param onActionPress - Callback for title action button
  */
-export const NextTaskWidget: React.FC<NextTaskWidgetProps> = ({
+export const NextTaskWidget: React.FC<NextTaskWidgetProps> = memo(({
   hasTask,
   task,
   onViewTask,
@@ -39,23 +42,65 @@ export const NextTaskWidget: React.FC<NextTaskWidgetProps> = ({
   hasAction = false,
   actionText = "Action",
   onActionPress,
+  isLoading = false,
+  showWeatherContext,
+  showMaterialStatus,
+  aiPriorityReason,
+  offlineMode,
+  showConnectivityStatus,
 }) => {
+  // Show loading state inside widget instead of hiding the whole widget
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View style={{
+          backgroundColor: colors.widgetContentArea,
+          borderRadius: 16,
+          padding: spacing.md,
+          minHeight: 88,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row',
+          gap: spacing.sm,
+        }}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Typography variant="bodyMedium" style={{ color: colors.textSubtitle }}>
+            Finding your next task...
+          </Typography>
+        </View>
+      );
+    }
+    
+    return <NextTaskContainer hasTask={hasTask} task={task} />;
+  };
+
   return (
     <Widget
       title={title}
       hasAction={hasAction}
       actionText={actionText}
       onActionPress={onActionPress}
-      showButton={hasTask} // Only show "View task" button when there's a task
+      showButton={hasTask && !isLoading} // Hide button when loading
       buttonText="View task"
       buttonVariant="primary" // Primary blue button as shown in Figma
       onButtonPress={onViewTask}
       style={style}
     >
-      {/* NextTaskContainer as swappable content */}
-      <NextTaskContainer hasTask={hasTask} task={task} />
+      {renderContent()}
     </Widget>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for React.memo
+  // Only re-render if critical props change
+  return (
+    prevProps.hasTask === nextProps.hasTask &&
+    prevProps.task?.id === nextProps.task?.id &&
+    prevProps.task?.title === nextProps.task?.title &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.title === nextProps.title &&
+    prevProps.showWeatherContext === nextProps.showWeatherContext &&
+    prevProps.showMaterialStatus === nextProps.showMaterialStatus
+  );
+});
 
 export default NextTaskWidget;

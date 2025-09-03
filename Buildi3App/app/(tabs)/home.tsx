@@ -13,13 +13,10 @@ import type { TaskFilterPeriod } from "../../components/ui/UpcomingTaskWidget/ty
 import { useProjects } from "../../hooks/useProjects";
 import { useTasks } from "../../hooks/useTasks";
 import { useAuth } from "../../hooks/useAuth";
-import type { Project, Task } from "../../lib/supabase/types";
+import type { Project } from "../../lib/supabase/types";
 import { getDisplayName } from "../../utils/userUtils";
 import { 
-  useConstructionNetworkStatus, 
-  useConstructionAppLifecycle,
-  ConstructionOfflineStorage,
-  ConstructionLoadingMessages 
+  useConstructionAppLifecycle
 } from "../../utils/constructionSiteSupport";
 
 /**
@@ -37,11 +34,7 @@ export default function HomeScreen() {
 
   // Construction site support - offline resilience and app lifecycle management
   const {
-    isAppActive,
     networkInfo,
-    offlineStorage,
-    shouldPauseRealTimeUpdates,
-    shouldUseReducedBandwidth,
   } = useConstructionAppLifecycle();
 
   // Load real project data
@@ -56,55 +49,52 @@ export default function HomeScreen() {
     orderDirection: 'desc'
   });
 
-  // Load real task data with construction AI optimization
+  // Load real task data (no AI - simple task selection)
   const {
     tasks: allTasks,
     loading: tasksLoading,
     error: tasksError,
-    upcomingTasks, // AI-enhanced upcoming tasks (max 5 for construction)
-    getNextTaskForWorker,
-    getWorkerContext,
   } = useTasks({
     includeCompleted: false,
     orderBy: 'due_date',
-    orderDirection: 'asc',
-    // Construction site optimization
-    weatherConditions: 'good', // TODO: Get from weather API
-    crewAvailability: true,
-    materialStatus: 'available',
-    // Mobile optimization
-    staleTime: 5 * 60 * 1000, // 5 min cache for construction sites
-    cacheTime: 30 * 60 * 1000, // 30 min offline support
-    enableOfflineQueue: true,
+    orderDirection: 'asc'
   });
 
-  // AI-enhanced next task state
-  const [nextTask, setNextTask] = React.useState<Task | null>(null);
-  const [nextTaskLoading, setNextTaskLoading] = React.useState(false);
+  // Simple next task selection (no AI)
+  const nextTask = React.useMemo(() => {
+    if (!allTasks?.length) return null;
+    
+    // Just pick the first non-completed task
+    return allTasks.find(task => 
+      task.stage !== 'completed' && task.stage !== 'blocked'
+    ) || null;
+  }, [allTasks]);
 
-  // Get AI-recommended next task
-  React.useEffect(() => {
-    if (!allTasks?.length || tasksLoading) return;
+  // Upcoming tasks for the widget (simple filter without AI)
+  const upcomingTasks = React.useMemo(() => {
+    if (!allTasks?.length) return [];
+    
+    // Filter out completed and blocked tasks, show up to 5 upcoming tasks
+    return allTasks
+      .filter(task => task.stage !== 'completed' && task.stage !== 'blocked')
+      .slice(0, 5);
+  }, [allTasks]);
 
-    const getNextTask = async () => {
-      setNextTaskLoading(true);
-      try {
-        const workerContext = getWorkerContext();
-        const aiNextTask = await getNextTaskForWorker(workerContext);
-        setNextTask(aiNextTask);
-      } catch (error) {
-        console.warn('Failed to get AI next task, using first available:', error);
-        // Fallback to first non-completed task
-        const fallbackTask = allTasks.find(task => 
-          task.stage !== 'completed' && task.stage !== 'blocked'
-        );
-        setNextTask(fallbackTask || null);
-      }
-      setNextTaskLoading(false);
+  // Memoize NextTaskWidget props to prevent flicker from object recreation
+  const nextTaskWidgetProps = React.useMemo(() => {
+    if (!nextTask) return { hasTask: false, task: undefined };
+    
+    return {
+      hasTask: true,
+      task: {
+        id: nextTask.id,
+        title: nextTask.title,
+        projectName: "Construction Project", // TODO: Get from project join
+        taskTitle: nextTask.title,
+        dueDate: nextTask.dueDate ? new Date(nextTask.dueDate) : new Date(),
+      } as NextTask
     };
-
-    getNextTask();
-  }, [allTasks, tasksLoading, getNextTaskForWorker, getWorkerContext]);
+  }, [nextTask]);
 
   // Transform database projects to UI format
   const uiProjects: Project[] = dbProjects.map(dbProject => ({
@@ -186,7 +176,7 @@ export default function HomeScreen() {
       pathname: '/task-detail/[id]',
       params: { id: taskId }
     });
-  }, [router]);
+  }, []);
 
   const handleViewTask = () => {
     if (nextTask?.id) {
@@ -220,14 +210,7 @@ export default function HomeScreen() {
           style={{ marginBottom: spacing.sm }} // Add spacing below header
         />
         {/* Next Task Widget - AI-prioritized construction-optimized task */}
-        {tasksLoading || nextTaskLoading ? (
-          <View style={[styles.loadingWidget, { marginBottom: spacing.md }]}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Typography variant="bodyMedium" style={styles.loadingText}>
-              Finding your next task...
-            </Typography>
-          </View>
-        ) : tasksError ? (
+        {tasksError ? (
           <View style={[styles.errorWidget, { marginBottom: spacing.md }]}>
             <Typography variant="bodyMedium" style={styles.errorText}>
               Unable to load tasks: {tasksError}
@@ -235,21 +218,10 @@ export default function HomeScreen() {
           </View>
         ) : (
           <NextTaskWidget
-            hasTask={!!nextTask}
-            task={nextTask ? {
-              id: nextTask.id,
-              title: nextTask.title,
-              projectName: "Construction Project", // TODO: Get from project join
-              taskTitle: nextTask.title,
-              dueDate: nextTask.dueDate ? new Date(nextTask.dueDate) : new Date(),
-            } as NextTask : undefined}
+            {...nextTaskWidgetProps}
             onViewTask={handleViewTask}
             style={{ marginBottom: spacing.md }}
-            // AI context indicators (new optional props)
-            showWeatherContext={nextTask?.weather_dependent}
-            showMaterialStatus={!!nextTask?.materials_needed}
-            aiPriorityReason={nextTask ? "AI optimized for construction workflow" : undefined}
-            // Construction site indicators
+            isLoading={tasksLoading}
             offlineMode={networkInfo.isOffline}
             showConnectivityStatus={true}
           />
@@ -286,19 +258,6 @@ export default function HomeScreen() {
           onFilterChange={(period) => setFilterPeriod(period)}
           onTaskPress={handleTaskPress}
           onViewAllPress={handleViewAllTasks}
-          loading={tasksLoading}
-          error={tasksError}
-          // Construction site indicators
-          showOfflineIndicator={networkInfo.isOffline}
-          networkStatus={networkInfo}
-          pendingSyncCount={offlineStorage.getPendingCount()}
-          emptyStateMessage={
-            tasksLoading 
-              ? ConstructionLoadingMessages.loading
-              : networkInfo.isOffline
-              ? "Working offline with cached tasks. Changes will sync when connection returns."
-              : "No upcoming tasks found. Great job staying on top of your work!"
-          }
         />
       </ScrollView>
     </View>

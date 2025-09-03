@@ -33,7 +33,8 @@
       "Bash(sed:*)",
       "Bash(git log:*)",
       "mcp__supabase__get_logs",
-      "WebFetch(domain:www.anthropic.com)"
+      "WebFetch(domain:www.anthropic.com)",
+      "Bash(npm run lint:*)"
     ],
     "additionalDirectories": [
       "/Users/federicoostan"
