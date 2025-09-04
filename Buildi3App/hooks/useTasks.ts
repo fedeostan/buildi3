@@ -200,6 +200,13 @@ export const useTasks = (options: UseTasksOptions = {}) => {
   }
 
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    console.log(`🔄 updateTask called: taskId=${taskId}, updates=`, JSON.stringify(updates, null, 2))
+    
+    if (!user) {
+      console.error('❌ updateTask failed: User not authenticated')
+      return { task: null, error: 'User not authenticated' }
+    }
+    
     try {
       // Update status for backward compatibility
       if (updates.stage) {
@@ -211,8 +218,10 @@ export const useTasks = (options: UseTasksOptions = {}) => {
           'under-inspection': 'in_progress'
         }
         updates.status = statusMapping[updates.stage]
+        console.log(`🔄 Stage mapping: ${updates.stage} -> status: ${updates.status}`)
       }
 
+      console.log(`🔄 Executing Supabase update for task ${taskId}...`)
       const { data, error } = await supabase
         .from('tasks')
         .update({
@@ -224,8 +233,11 @@ export const useTasks = (options: UseTasksOptions = {}) => {
         .single()
 
       if (error) {
+        console.error(`❌ Supabase update failed for task ${taskId}:`, error)
         throw error
       }
+
+      console.log(`✅ Supabase update successful for task ${taskId}:`, data)
 
       // Log activity for significant updates
       if (updates.stage || updates.assigned_to) {
@@ -234,6 +246,7 @@ export const useTasks = (options: UseTasksOptions = {}) => {
           ? `Task status changed to ${updates.stage}` 
           : 'Task assignment updated'
 
+        console.log(`🔄 Creating activity log entry...`)
         await supabase
           .from('activity_log')
           .insert({
@@ -243,11 +256,14 @@ export const useTasks = (options: UseTasksOptions = {}) => {
             related_task_id: taskId,
             related_project_id: data.project_id,
           })
+        console.log(`✅ Activity log entry created`)
       }
 
-      return { task: TypeConverters.taskFromDatabase(data), error: null }
+      const result = { task: TypeConverters.taskFromDatabase(data), error: null }
+      console.log(`✅ updateTask completed successfully:`, result)
+      return result
     } catch (err: any) {
-      console.error('Error updating task:', err)
+      console.error(`❌ updateTask failed for task ${taskId}:`, err)
       return { task: null, error: err.message || 'Failed to update task' }
     }
   }
@@ -275,7 +291,14 @@ export const useTasks = (options: UseTasksOptions = {}) => {
   }
 
   const updateTaskStage = async (taskId: string, newStage: TaskStage) => {
-    return updateTask(taskId, { stage: newStage })
+    console.log(`🔄 updateTaskStage called: taskId=${taskId}, newStage=${newStage}`)
+    
+    // Use optimistic updates for immediate UI feedback during drag & drop
+    // This provides instant visual feedback while the database update happens in background
+    // If the server update fails, the UI will automatically roll back to the original state
+    const result = await updateTaskWithAI(taskId, { stage: newStage }, true)
+    console.log(`🔄 updateTaskStage result:`, result)
+    return result
   }
 
   const refreshTasks = () => {
@@ -468,8 +491,14 @@ export const useTasks = (options: UseTasksOptions = {}) => {
 
   // Enhanced task update with optimistic UI and conflict resolution
   const updateTaskWithAI = useCallback(async (taskId: string, updates: Partial<Task>, optimistic = true) => {
+    console.log(`🔄 updateTaskWithAI called: taskId=${taskId}, optimistic=${optimistic}`, updates);
+    
+    // Store original task for potential rollback
+    const originalTask = tasks.find(t => t.id === taskId);
+    
     // Optimistic update for immediate UI feedback
-    if (optimistic) {
+    if (optimistic && originalTask) {
+      console.log(`✨ Applying optimistic update for task ${taskId}`);
       setTasks(prev => prev.map(task => 
         task.id === taskId ? { ...task, ...updates } : task
       ));
@@ -477,18 +506,26 @@ export const useTasks = (options: UseTasksOptions = {}) => {
 
     try {
       const result = await updateTask(taskId, updates);
-      if (result.error && optimistic) {
+      
+      if (result.error && optimistic && originalTask) {
+        console.log(`❌ Server update failed, rolling back optimistic update for task ${taskId}`);
         // Rollback optimistic update on error
         setTasks(prev => prev.map(task => 
-          task.id === taskId ? tasks.find(t => t.id === taskId) || task : task
+          task.id === taskId ? originalTask : task
         ));
+      } else if (result.task) {
+        console.log(`✅ Server update successful for task ${taskId}`);
       }
+      
       return result;
     } catch (error) {
-      if (optimistic) {
+      console.error(`❌ updateTaskWithAI failed for task ${taskId}:`, error);
+      
+      if (optimistic && originalTask) {
+        console.log(`🔄 Rolling back optimistic update due to exception`);
         // Rollback optimistic update on error
         setTasks(prev => prev.map(task => 
-          task.id === taskId ? tasks.find(t => t.id === taskId) || task : task
+          task.id === taskId ? originalTask : task
         ));
       }
       throw error;

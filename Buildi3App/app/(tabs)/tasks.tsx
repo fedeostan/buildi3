@@ -106,16 +106,23 @@ export default function TasksScreen() {
     }));
   };
 
-  // Handle task stage change using real backend
+  // Handle task stage change using real backend with immediate UI feedback
   const handleTaskStageChange = async (taskId: string, newStage: TaskStage) => {
+    console.log(`🎯 handleTaskStageChange called: taskId=${taskId}, newStage=${newStage}`)
     try {
+      console.log(`🎯 About to call updateTaskStage with optimistic updates...`)
       const result = await updateTaskStage(taskId, newStage);
+      console.log(`🎯 updateTaskStage completed:`, result)
       if (result.error) {
-        console.error('Failed to update task stage:', result.error);
-        // Could show a toast/alert here
+        console.error('❌ Failed to update task stage:', result.error);
+        // TODO: Show user-friendly error notification
+        // The optimistic update will be rolled back automatically
+      } else {
+        console.log(`✅ Task stage updated successfully with immediate UI feedback!`)
       }
     } catch (error) {
-      console.error('Error updating task stage:', error);
+      console.error('❌ Error updating task stage:', error);
+      // TODO: Show user-friendly error notification
     }
   };
 
@@ -125,36 +132,43 @@ export default function TasksScreen() {
     await handleTaskStageChange(taskId, newStage);
   };
 
-  // Handle task press - navigate to task detail screen
+  // Handle task press - navigate to task detail screen (ID-only pattern)
   const handleTaskPress = (task: any) => {
+    if (!task?.id) {
+      console.error('TasksScreen: Cannot navigate to task detail - missing task ID:', task);
+      return;
+    }
+    
     router.push({
-      pathname: "/task-detail",
-      params: {
-        id: task.id,
-        title: task.title,
-        projectName: task.projectName,
-        dueDate: task.dueDate.toISOString(),
-        isCompleted: task.isCompleted.toString(),
-        stage: task.stage,
-      },
+      pathname: '/task-detail/[id]',
+      params: { id: task.id }
     });
   };
 
   // Handle drag start
   const handleDragStart = (payload: TaskDragPayload) => {
-    console.log(`Started dragging task: ${payload.title}`);
+    console.log(`🎯 Started dragging task: "${payload.title}" from ${payload.stage}`);
   };
 
   // Handle drag end  
   const handleDragEnd = (payload: TaskDragPayload) => {
-    console.log(`Ended dragging task: ${payload.title}`);
+    console.log(`🎯 Ended dragging task: "${payload.title}"`);
   };
 
-  // Handle task drop - move task to new stage
+  // Handle task drop - move task to new stage with immediate UI feedback
   const handleTaskDrop = (draggedTask: TaskDragPayload, targetStage: TaskStage) => {
-    console.log(`Moving task "${draggedTask.title}" from ${draggedTask.stage} to ${targetStage}`);
+    console.log(`🚀 handleTaskDrop called: Moving task "${draggedTask.title}" from ${draggedTask.stage} to ${targetStage}`);
     
-    // Update the task's stage using existing handler
+    // Skip if dropping on same stage
+    if (draggedTask.stage === targetStage) {
+      console.log(`🚀 Skipping drop - task already in ${targetStage} stage`);
+      return;
+    }
+    
+    console.log(`🚀 Drag payload:`, draggedTask);
+    console.log(`🚀 About to call handleTaskStageChange with optimistic updates:`, {taskId: draggedTask.id, targetStage});
+    
+    // This will now provide immediate UI feedback via optimistic updates
     handleTaskStageChange(draggedTask.id, targetStage);
   };
 

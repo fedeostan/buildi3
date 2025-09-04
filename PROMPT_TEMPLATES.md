@@ -9,6 +9,7 @@
 ## 🎯 **Session Initialization (Always Start Here)**
 
 ### **Context Bootstrap Command**
+
 ```
 @Workflow/SESSION_INIT.md @context/MASTER_LESSONS.md @Buildi3App/CLAUDE.md @Planning/ACCOMPLISHMENTS_SUMMARY.md
 
@@ -22,8 +23,9 @@ Execute the SESSION_INIT.md protocol. Read all Phase 1 critical files, provide t
 ## 📋 **Case 1: New Feature Development**
 
 ### **Feature Planning Session**
+
 ```
-@context/MASTER_LESSONS.md @context/component-reuse-analysis.md @app/(tabs)/[SIMILAR_SCREEN] @components/ui/[RELATED_COMPONENTS] @theme/ 
+@context/MASTER_LESSONS.md @context/component-reuse-analysis.md @app/(tabs)/[SIMILAR_SCREEN] @components/ui/[RELATED_COMPONENTS] @theme/
 
 /ultrathink-development Implement [FEATURE_NAME] following these requirements:
 
@@ -33,7 +35,7 @@ Execute the SESSION_INIT.md protocol. Read all Phase 1 critical files, provide t
 - [Design specifications or references]
 
 **Context:**
-- Epic Status: [Current epic] 
+- Epic Status: [Current epic]
 - Integration Points: [Related systems/components]
 - Design System: Must use existing design tokens and components
 
@@ -48,6 +50,7 @@ Don't implement yet - provide comprehensive analysis and implementation strategy
 ```
 
 ### **Feature Implementation Session** (After Planning)
+
 ```
 @[PLANNED_FILES] @components/ui/ @theme/ @types/
 
@@ -63,7 +66,7 @@ Don't implement yet - provide comprehensive analysis and implementation strategy
 **Success Criteria:**
 - [ ] Feature works as specified
 - [ ] Follows established patterns
-- [ ] Uses existing components where possible  
+- [ ] Uses existing components where possible
 - [ ] Includes proper TypeScript typing
 - [ ] Has appropriate error handling
 - [ ] Integrates smoothly with existing architecture
@@ -76,6 +79,7 @@ Execute with appropriate specialist agent and create comprehensive test cases.
 ## 🔧 **Case 2: Small Upgrade/Enhancement**
 
 ### **Small Enhancement Session**
+
 ```
 @[TARGET_FILE] @context/MASTER_LESSONS.md @components/ui/[RELATED_COMPONENTS] @theme/
 
@@ -108,6 +112,7 @@ Focus on minimal, clean changes that follow established patterns.
 ## 🗄️ **Case 3: Backend and Database Session**
 
 ### **Backend Work Session**
+
 ```
 @context/MASTER_LESSONS.md @lib/supabase/ @types/database.types.ts
 
@@ -139,6 +144,7 @@ Please provide comprehensive analysis including security, performance, and integ
 ```
 
 ### **Database Migration Session**
+
 ```
 @context/MASTER_LESSONS.md
 
@@ -157,7 +163,7 @@ Please provide comprehensive analysis including security, performance, and integ
 
 **Process:**
 1. Review current schema with mcp__supabase__list_tables
-2. Design migration following established patterns  
+2. Design migration following established patterns
 3. Create migration with mcp__supabase__apply_migration
 4. Generate updated TypeScript types
 5. Update related service files
@@ -171,6 +177,7 @@ Focus on maintaining data integrity and security throughout the migration.
 ## 🐛 **Case 4: Bug Fix**
 
 ### **Bug Investigation Session**
+
 ```
 @context/MASTER_LESSONS.md @[PROBLEMATIC_FILE] @[RELATED_TEST_FILES]
 
@@ -190,7 +197,7 @@ Focus on maintaining data integrity and security throughout the migration.
 **Known Anti-Patterns Check:**
 Please first check MASTER_LESSONS.md anti-patterns for:
 - [ ] Enum format mismatches (kebab-case vs snake_case)
-- [ ] Props interface mismatches (spreading vs object props)  
+- [ ] Props interface mismatches (spreading vs object props)
 - [ ] RLS policy recursion in database queries
 - [ ] Race conditions in authentication flow
 - [ ] Component props validation missing
@@ -206,6 +213,7 @@ Priority: Fix the immediate issue AND prevent future occurrences.
 ```
 
 ### **Critical Bug Session** (Production Issues)
+
 ```
 @context/MASTER_LESSONS.md @[CRITICAL_FILES]
 
@@ -239,6 +247,7 @@ Focus on immediate stabilization followed by comprehensive prevention.
 ## 🎯 **Case 5: Strategic Planning**
 
 ### **Strategic Feature Planning**
+
 ```
 @context/MASTER_LESSONS.md @Planning/ACCOMPLISHMENTS_SUMMARY.md @context/epic1-implementation-complete.md
 
@@ -277,6 +286,7 @@ Use research-validation-specialist for market analysis and technical validation 
 ```
 
 ### **Epic Planning Session**
+
 ```
 @context/MASTER_LESSONS.md @Planning/ACCOMPLISHMENTS_SUMMARY.md @context/component-reuse-analysis.md
 
@@ -314,6 +324,7 @@ Create a production-ready Epic plan that can be executed systematically.
 ```
 
 ### **Architecture Decision Session**
+
 ```
 @context/MASTER_LESSONS.md @context/epic1-implementation-complete.md
 
@@ -358,6 +369,7 @@ Document the decision rationale for future reference in MASTER_LESSONS.md.
 ## 🔧 **Specialized Workflow Sessions**
 
 ### **MCP Tool Integration Session**
+
 ```
 @context/MASTER_LESSONS.md @Buildi3App/CLAUDE.md
 
@@ -395,6 +407,7 @@ Focus on leveraging MCP capabilities while maintaining consistency with project 
 ```
 
 ### **Performance Optimization Session**
+
 ```
 @context/MASTER_LESSONS.md @[PERFORMANCE_CRITICAL_FILES]
 
@@ -438,6 +451,7 @@ Focus on sustainable performance improvements that can be maintained and extende
 ## 🎓 **Session Management Best Practices**
 
 ### **Session Transition Commands**
+
 ```bash
 # Between different work types
 /clear
@@ -450,7 +464,9 @@ Focus on sustainable performance improvements that can be maintained and extende
 ```
 
 ### **Context Validation Checklist**
+
 Before starting any session:
+
 - [ ] SESSION_INIT.md protocol executed
 - [ ] 4 validation questions answered correctly
 - [ ] Relevant files tagged with @
@@ -459,7 +475,9 @@ Before starting any session:
 - [ ] Success criteria clearly defined
 
 ### **Quality Gates**
+
 After completing any session:
+
 - [ ] Deliverables match requirements
 - [ ] Follows established patterns from MASTER_LESSONS
 - [ ] Avoids known anti-patterns
@@ -470,9 +488,10 @@ After completing any session:
 ---
 
 **🚀 Usage Instructions:**
+
 1. **Copy** the relevant template for your use case
 2. **Customize** the bracketed placeholders with your specific details
 3. **Tag** the appropriate files using @ syntax
 4. **Paste** and execute for optimal development workflow
 
-**🎯 Success Metric:** Each template should provide immediate context acquisition and task-specific optimization for maximum development productivity.**
+**🎯 Success Metric:** Each template should provide immediate context acquisition and task-specific optimization for maximum development productivity.\*\*

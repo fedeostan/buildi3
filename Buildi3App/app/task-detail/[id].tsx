@@ -561,7 +561,12 @@ export default function TaskDetailScreen() {
                 isCompleted={subtask.isCompleted}
                 isLastItem={index === subtasks.length - 1}
                 onToggleComplete={handleToggleSubtask}
-                onPress={() => console.log("Subtask pressed:", subtask.id)}
+                onPress={() => {
+                  // Navigate to subtask detail (if it exists in database)
+                  // For demo subtasks, just log for now
+                  console.log("Subtask pressed:", subtask.id);
+                  // TODO: Implement subtask navigation when subtasks are stored in database
+                }}
               />
             ))}
           </View>

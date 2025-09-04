@@ -26,6 +26,8 @@
 
 **Replace all mock task data with live Supabase database connections across home and tasks screens, enabling construction-optimized task lifecycle management with real-time updates, offline resilience, and mobile-optimized navigation patterns for field workers.**
 
+> **Note**: AI-powered features mentioned in this document (intelligent task prioritization, predictive analysis, etc.) are planned for future implementation. This epic focuses on core database integration and construction workflow optimization using rule-based logic.
+
 ## Implementation Requirements
 
 ### 1. Home Screen Task Widget Integration
@@ -53,14 +55,14 @@ const { tasks: allTasks, loading: tasksLoading, error: tasksError } = useTasks({
   cacheTime: 30 * 60 * 1000 // 30 min offline support
 });
 
-// Construction-optimized task filtering with memoization
+// Construction-optimized task filtering with memoization (rule-based logic)
 const upcomingTasks = useMemo(() => {
   if (!allTasks?.length) return [];
   
   return allTasks
     .filter(task => task.stage !== 'completed' && task.stage !== 'blocked')
     .sort((a, b) => {
-      // Construction-specific priority logic
+      // Construction-specific priority logic (rule-based, not AI)
       const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
       const dateOrder = new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
       return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0) || dateOrder;
@@ -102,7 +104,7 @@ Connect NextTaskWidget to prioritized task data:
   }}
 />
 
-// Construction-optimized next task calculation
+// Construction-optimized next task calculation (rule-based logic)
 const nextTask = useMemo(() => {
   if (!upcomingTasks?.length) return null;
   
@@ -116,15 +118,15 @@ const nextTask = useMemo(() => {
   
   return activeTasks
     .sort((a, b) => {
-      // 1. Safety-critical tasks first
+      // 1. Safety-critical tasks first (rule-based priority)
       if (a.priority === 'critical' && b.priority !== 'critical') return -1;
       if (b.priority === 'critical' && a.priority !== 'critical') return 1;
       
-      // 2. Weather-dependent tasks on good weather days
+      // 2. Weather-dependent tasks on good weather days (simple rule-based check)
       if (a.weather_dependent && !b.weather_dependent && isGoodWeather) return -1;
       if (b.weather_dependent && !a.weather_dependent && isGoodWeather) return 1;
       
-      // 3. Tasks with approaching inspections
+      // 3. Tasks with approaching inspections (date-based rule)
       if (a.inspection_due && !b.inspection_due) return -1;
       if (b.inspection_due && !a.inspection_due) return 1;
       
@@ -355,13 +357,15 @@ export type TaskStage =
   | "blocked";             // Cannot proceed due to dependencies
 ```
 
-### Enhanced Priority Logic
-Construction-specific factors now influence task prioritization:
+### Enhanced Priority Logic (Rule-Based)
+Construction-specific factors now influence task prioritization using rule-based logic:
 1. **Safety-critical tasks** (priority: critical) always first
-2. **Weather-dependent tasks** prioritized during good weather
+2. **Weather-dependent tasks** prioritized during good weather (simple weather API integration)
 3. **Inspection deadlines** boost priority for approaching due dates
-4. **Material availability** affects task readiness
-5. **Crew coordination** ensures assigned workers can proceed
+4. **Material availability** affects task readiness (status-based filtering)
+5. **Crew coordination** ensures assigned workers can proceed (assignment-based logic)
+
+> **Future AI Enhancement**: Advanced machine learning models for predictive task prioritization will be implemented in a future epic, including weather pattern analysis, crew performance optimization, and material delivery predictions.
 
 ### Mobile Performance Optimizations
 - **ID-only navigation** reduces route parameter overhead
@@ -457,9 +461,9 @@ const {
   getTasksByStage,          // () => Record<TaskStage, TaskRowProps[]>
   refreshTasks,             // () => void - Manual refresh
   
-  // NEW: Construction-specific enhancements
+  // NEW: Construction-specific enhancements (rule-based logic)
   getTasksForConstruction,  // (weather?, crew?, materials?) => Task[]
-  getNextTaskForWorker,     // () => Task | null - Construction-prioritized
+  getNextTaskForWorker,     // () => Task | null - Rule-based prioritization
   queueOfflineUpdate,       // (taskId, update) => void - Offline support
   syncOfflineChanges,       // () => Promise<void> - Reconnection sync
 } = useTasks({
