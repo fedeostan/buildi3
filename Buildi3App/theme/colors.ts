@@ -118,6 +118,8 @@ export const colors = {
   textSubtitle: "#646466", // Subtitle text from Figma (specific gray)
   textTertiary: GRAY[500], // Placeholder, helper text
   textInverse: GRAY[0], // Text on dark backgrounds
+  // Additional semantic text color for “Gray 16” request
+  textGray16: GRAY[700],
 
   // Button Colors (matching your Figma buttons)
   buttonPrimary: PRIMARY_BLUE[600], // #495D92 from Figma
@@ -157,6 +159,9 @@ export const colors = {
   tagYellowText: YELLOW[14], // Colors/Yellow/14
   tagGreenBackground: GREEN_ALPHA[10], // Colors/Green/Alpha/10/10
   tagGreenText: GREEN[14], // Colors/Green/14
+  // Neutral tag (Not started) — use DS gray tokens
+  tagNeutralBackground: GRAY[50],
+  tagNeutralText: GRAY[600],
 
   // Expose base DS colors for reuse
   red10: STATUS.error, // #F44336

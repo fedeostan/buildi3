@@ -19,10 +19,46 @@ import {
   TaskRow,
   Widget,
   TaskActionsBottomSheet,
+  TaskDetailTitle,
+  AssignedToDropDown,
+  DueDateDropdown,
+  ProjectDropdown,
 } from "../../components/ui";
+import type { ContactOption } from "../../components/ui/AssignedToDropDown";
 import { DateTag } from "../../components/ui/Tag";
 import { useTask, useTasks } from "../../hooks/useTasks";
 import { Task, TaskStage } from "../../lib/supabase/types";
+import {
+  generateDummyContacts,
+  updateTaskAssignment,
+  profileToContact,
+} from "../../services/assignmentService";
+
+// Defensive programming: Validate all component imports at runtime in development
+if (__DEV__) {
+  const components = {
+    Typography,
+    Input,
+    TextArea,
+    Button,
+    Icon,
+    TaskRow,
+    Widget,
+    TaskActionsBottomSheet,
+    TaskDetailTitle,
+    AssignedToDropDown,
+  };
+
+  Object.entries(components).forEach(([name, component]) => {
+    if (!component) {
+      console.error(
+        `❌ TaskDetailScreen: ${name} component is undefined. Check export/import patterns.`
+      );
+    } else {
+      console.log(`✅ TaskDetailScreen: ${name} component loaded successfully`);
+    }
+  });
+}
 
 /**
  * Task Detail Screen - Detailed view for editing and managing tasks
@@ -68,26 +104,120 @@ export default function TaskDetailScreen() {
   const [newSubtask, setNewSubtask] = useState("");
   const [showActionsMenu, setShowActionsMenu] = useState(false);
 
+  // Assignment state management
+  const [assignmentLoading, setAssignmentLoading] = useState(false);
+  const [assignmentError, setAssignmentError] = useState<string | undefined>();
+  const [availableContacts, setAvailableContacts] = useState<ContactOption[]>(
+    []
+  );
+  const [assignedUserContact, setAssignedUserContact] = useState<
+    ContactOption | undefined
+  >();
+  const [pendingAssignedUserId, setPendingAssignedUserId] = useState<
+    string | null | undefined
+  >(undefined);
+
+  // Safe area aware dynamic styles
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      paddingTop: Math.max(insets.top, 20) + spacing.sm,
+    },
+    contentContainer: {
+      paddingBottom: Math.max(insets.bottom, 20) + spacing.xl,
+    },
+    pendingFooter: {
+      paddingBottom: Math.max(insets.bottom, 20),
+    },
+  });
+
+  // Pending changes management (accept/decline)
+  const [pendingTitle, setPendingTitle] = useState<string | undefined>(
+    undefined
+  );
+  const [pendingStage, setPendingStage] = useState<TaskStage | undefined>(
+    undefined
+  );
+  const [pendingProjectId, setPendingProjectId] = useState<
+    string | null | undefined
+  >(undefined);
+  const [pendingDueDate, setPendingDueDate] = useState<Date | null | undefined>(
+    undefined
+  );
+
   // Update form fields when task loads
   React.useEffect(() => {
     if (task) {
       setTaskTitle(task.title);
       setDescription(task.description || "");
+      // Reset pending edits when fresh task arrives
+      setPendingTitle(undefined);
+      setPendingStage(undefined);
+      setPendingProjectId(undefined);
+      setPendingDueDate(undefined);
     }
   }, [task]);
+
+  // Load available contacts and initialize assignment state
+  React.useEffect(() => {
+    const loadContacts = async () => {
+      // Load dummy contacts for now
+      // TODO: Future engineer - Replace with real contact fetching:
+      // 1. Fetch project team members from database
+      // 2. Include device contacts if permissions granted
+      // 3. Filter by project access and roles
+      const dummyContacts = generateDummyContacts();
+      setAvailableContacts(dummyContacts);
+    };
+
+    loadContacts();
+  }, []);
+
+  // Update assigned user contact when task changes
+  React.useEffect(() => {
+    if (task?.assigned_to) {
+      // TODO: Future engineer - Fetch real assigned user details from database:
+      // const assignedProfile = await fetchUserProfile(task.assigned_to);
+      // const assignedContact = profileToContact(assignedProfile);
+
+      // For now, find in dummy contacts or create basic contact info
+      const existingContact = availableContacts.find(
+        (contact) => contact.id === task.assigned_to
+      );
+
+      if (existingContact) {
+        setAssignedUserContact(existingContact);
+      } else {
+        // Create basic contact info for assigned user not in contact list
+        setAssignedUserContact({
+          id: task.assigned_to,
+          name: "Assigned User", // TODO: Fetch real name from database
+          initials: "AU",
+          phone: undefined,
+          email: undefined,
+        });
+      }
+      // Reset pending assignee when actual task value changes
+      setPendingAssignedUserId(undefined);
+    } else {
+      setAssignedUserContact(undefined);
+      setPendingAssignedUserId(undefined);
+    }
+  }, [task?.assigned_to, availableContacts]);
 
   // Construction-aware stage transitions
   const allowedTransitions = useMemo(() => {
     if (!displayTask?.stage) return [];
 
-    const transitions: Record<TaskStage, TaskStage[]> = {
-      "not-started": ["in-progress", "blocked"],
-      "in-progress": ["completed", "blocked"],
-      completed: [], // Terminal state
-      blocked: ["not-started", "in-progress"], // Can restart
-    };
+    // Allow free movement between all stages for maximum flexibility
+    const allStages: TaskStage[] = [
+      "not-started",
+      "in-progress",
+      "completed",
+      "blocked",
+    ];
 
-    return transitions[displayTask.stage as TaskStage] || [];
+    // Return all stages except the current one
+    return allStages.filter((stage) => stage !== displayTask.stage);
   }, [displayTask?.stage]);
 
   // Demo subtasks
@@ -165,8 +295,8 @@ export default function TaskDetailScreen() {
   );
 
   // Construction-aware stage change handling
-  const handleStageChange = useCallback(
-    async (newStage: TaskStage) => {
+  const handleStageSelectPending = useCallback(
+    (newStage: TaskStage) => {
       if (!allowedTransitions.includes(newStage)) {
         Alert.alert(
           "Invalid Transition",
@@ -174,38 +304,140 @@ export default function TaskDetailScreen() {
         );
         return;
       }
-
-      await handleUpdateTask({ stage: newStage });
+      setPendingStage(newStage);
     },
-    [allowedTransitions, displayTask?.stage, handleUpdateTask]
+    [allowedTransitions, displayTask?.stage]
   );
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleMarkComplete = useCallback(() => {
-    if (!displayTask) return;
-
-    const isCurrentlyCompleted = displayTask.stage === "completed";
-    const nextStage: TaskStage = isCurrentlyCompleted
-      ? "in-progress"
-      : "completed";
-
-    handleStageChange(nextStage);
-  }, [displayTask, handleStageChange]);
-
-  const handleTitleSave = useCallback(() => {
-    if (taskTitle !== task?.title) {
-      handleUpdateTask({ title: taskTitle });
+  // Title commit should set pending change, not immediately persist
+  const handleTitleCommitPending = useCallback(() => {
+    if (task && taskTitle !== task.title) {
+      setPendingTitle(taskTitle);
     }
-  }, [taskTitle, task?.title, handleUpdateTask]);
+  }, [task, taskTitle]);
+
+  // Keep for description immediate save; title handled via pending
+  const handleTitleSave = useCallback(() => {
+    /* no-op; title saved via accept changes */
+  }, []);
 
   const handleDescriptionSave = useCallback(() => {
     if (description !== task?.description) {
       handleUpdateTask({ description });
     }
   }, [description, task?.description, handleUpdateTask]);
+
+  // Accept/Discard pending changes
+  const hasPendingChanges = useMemo(() => {
+    return (
+      (pendingTitle !== undefined && pendingTitle !== task?.title) ||
+      (pendingStage !== undefined && pendingStage !== displayTask?.stage) ||
+      (pendingAssignedUserId !== undefined &&
+        pendingAssignedUserId !== (task?.assigned_to ?? null)) ||
+      (pendingProjectId !== undefined &&
+        pendingProjectId !== ((task as any)?.project_id ?? null)) ||
+      (pendingDueDate !== undefined &&
+        (task?.dueDate
+          ? new Date(task.dueDate as any).toDateString()
+          : null) !== (pendingDueDate ? pendingDueDate.toDateString() : null))
+    );
+  }, [
+    pendingTitle,
+    pendingStage,
+    pendingAssignedUserId,
+    pendingProjectId,
+    pendingDueDate,
+    task?.title,
+    task?.assigned_to,
+    (task as any)?.project_id,
+    displayTask?.stage,
+  ]);
+
+  const handleAcceptChanges = useCallback(async () => {
+    if (!task) return;
+    const updates: Partial<Task> = {};
+    if (pendingTitle !== undefined && pendingTitle !== task.title) {
+      updates.title = pendingTitle;
+    }
+    if (pendingStage !== undefined && pendingStage !== displayTask?.stage) {
+      updates.stage = pendingStage;
+    }
+    if (pendingDueDate !== undefined) {
+      // Save due date (null clears). Convert to ISO string for DB
+      (updates as any).dueDate = pendingDueDate
+        ? new Date(pendingDueDate)
+        : null;
+    }
+    if (
+      pendingAssignedUserId !== undefined &&
+      pendingAssignedUserId !== (task.assigned_to ?? null)
+    ) {
+      // @ts-ignore allow null for clearing assignment
+      updates.assigned_to = pendingAssignedUserId as any;
+    }
+    if (
+      pendingProjectId !== undefined &&
+      pendingProjectId !== ((task as any).project_id ?? null)
+    ) {
+      // @ts-ignore align with DB
+      (updates as any).projectId = pendingProjectId as any;
+      // also set nested shape so UI shows name once backend refreshes
+    }
+    if (Object.keys(updates).length === 0) return;
+    try {
+      setAssignmentLoading(true);
+      await handleUpdateTask(updates);
+    } finally {
+      setAssignmentLoading(false);
+    }
+    setPendingTitle(undefined);
+    setPendingStage(undefined);
+    setPendingAssignedUserId(undefined);
+    setPendingProjectId(undefined);
+    setPendingDueDate(undefined);
+  }, [task, pendingTitle, pendingStage, displayTask?.stage, handleUpdateTask]);
+
+  const handleDiscardChanges = useCallback(() => {
+    if (task) {
+      setTaskTitle(task.title);
+    }
+    setPendingTitle(undefined);
+    setPendingStage(undefined);
+    // Revert pending assignee and UI to current task value
+    setPendingAssignedUserId(undefined);
+    setPendingProjectId(undefined);
+    setPendingDueDate(undefined);
+    if (task?.assigned_to) {
+      const existing = availableContacts.find((c) => c.id === task.assigned_to);
+      setAssignedUserContact(existing);
+    } else {
+      setAssignedUserContact(undefined);
+    }
+  }, [task]);
+
+  // Assignment handlers with real database integration
+  const handleAssignUser = useCallback(
+    (contact: ContactOption) => {
+      if (!task) return;
+      // Only set pending state and update UI immediately; DB update happens on Save changes
+      setPendingAssignedUserId(contact.id);
+      setAssignedUserContact(contact);
+      setAssignmentError(undefined);
+    },
+    [task]
+  );
+
+  const handleUnassignUser = useCallback(() => {
+    if (!task) return;
+    // Only set pending state and update UI; DB update happens on Save changes
+    setPendingAssignedUserId(null);
+    setAssignedUserContact(undefined);
+    setAssignmentError(undefined);
+  }, [task]);
 
   const handleMoreOptions = () => {
     setShowActionsMenu(true);
@@ -377,7 +609,7 @@ export default function TaskDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.backButton}
@@ -407,126 +639,93 @@ export default function TaskDetailScreen() {
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          dynamicStyles.contentContainer,
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Task Title Section */}
         <View style={styles.section}>
-          <View style={styles.titleHeader}>
-            <View style={styles.titleInputContainer}>
-              <Input
-                label="Task Title"
-                value={taskTitle}
-                onChangeText={setTaskTitle}
-                onBlur={handleTitleSave}
-                placeholder="Enter task title"
-                state={taskTitle ? "filled" : "default"}
-                containerStyle={styles.titleInput}
-              />
-            </View>
-            <View style={styles.actionButtons}>
-              <Button
-                title={isCompleted ? "✓ Complete" : "Mark Complete"}
-                onPress={handleMarkComplete}
-                style={[
-                  styles.completeButton,
-                  isCompleted && styles.completeButtonActive,
-                ]}
-              />
-            </View>
-          </View>
+          <TaskDetailTitle
+            title={taskTitle}
+            stage={(pendingStage || displayTask.stage) as TaskStage}
+            onTitleChange={setTaskTitle}
+            onTitleCommit={handleTitleCommitPending}
+            onStageSelect={handleStageSelectPending}
+            allowedStages={allowedTransitions}
+            containerStyle={styles.titleInput}
+          />
         </View>
 
         {/* Meta Information Section */}
         <View style={styles.section}>
           <View style={styles.metaRow}>
+            {/* Assignment Section - Using new AssignedToDropDown component */}
             <View style={styles.metaItem}>
-              <Typography variant="bodySmall" style={styles.metaLabel}>
-                Assigned to
-              </Typography>
-              <View style={styles.metaContent}>
-                <View style={styles.avatar}>
-                  <Typography variant="bodyMedium" style={styles.avatarText}>
-                    FO
-                  </Typography>
-                </View>
-                <Typography variant="bodyMedium" style={styles.assigneeText}>
-                  {displayTask.assigned_to ? "Assigned User" : "Unassigned"}
-                </Typography>
-              </View>
+              <AssignedToDropDown
+                assignedUserId={displayTask.assigned_to || undefined}
+                assignedUser={assignedUserContact}
+                contacts={availableContacts}
+                onAssignUser={handleAssignUser}
+                onUnassignUser={handleUnassignUser}
+                loading={assignmentLoading}
+                disabled={loading} // Disable during task loading
+                errorMessage={assignmentError}
+                bottomSheetTitle="Assign Task"
+                fieldStyle={{ flex: 1 }}
+              />
             </View>
             <View style={styles.metaItem}>
-              <Typography variant="bodySmall" style={styles.metaLabel}>
-                Due date
-              </Typography>
-              <View style={styles.dueDateContainer}>
-                <Icon name="calendar" size="sm" color="red" />
-                <Typography variant="bodyMedium" style={styles.dueDateText}>
-                  {dueDate.toLocaleDateString()}
-                </Typography>
-              </View>
+              <DueDateDropdown
+                label="Due date"
+                value={
+                  pendingDueDate !== undefined
+                    ? pendingDueDate
+                    : displayTask.dueDate
+                    ? new Date(displayTask.dueDate as any)
+                    : null
+                }
+                onSelect={(date: Date | null) => {
+                  setPendingDueDate(date);
+                  // immediate UI reflection
+                  setOptimisticUpdates((prev) => ({
+                    ...prev,
+                    dueDate: date || null,
+                  }));
+                }}
+                bottomSheetTitle="Choose due date"
+                fieldStyle={{ flex: 1 }}
+              />
             </View>
           </View>
         </View>
 
-        {/* Project Section */}
-        {displayTask.projectId && (
-          <View style={styles.section}>
-            <Typography variant="bodyMedium" style={styles.sectionTitle}>
-              Project
-            </Typography>
-            <View style={styles.projectRow}>
-              <View style={styles.projectIndicator} />
-              <Typography variant="bodyMedium">
-                {(displayTask as any).project?.name || "Construction Project"}
-              </Typography>
-            </View>
-          </View>
-        )}
-
-        {/* Construction-specific details */}
-        {(displayTask.weather_dependent ||
-          displayTask.trade_required ||
-          displayTask.safety_notes) && (
-          <View style={styles.section}>
-            <Typography variant="bodyMedium" style={styles.sectionTitle}>
-              Construction Details
-            </Typography>
-            {displayTask.weather_dependent && (
-              <View style={styles.constructionDetail}>
-                <Icon name="cloud-drizzle" size="sm" color="textSecondary" />
-                <Typography
-                  variant="bodyMedium"
-                  style={styles.constructionDetailText}
-                >
-                  Weather dependent task
-                </Typography>
-              </View>
-            )}
-            {displayTask.trade_required && (
-              <View style={styles.constructionDetail}>
-                <Icon name="tool" size="sm" color="textSecondary" />
-                <Typography
-                  variant="bodyMedium"
-                  style={styles.constructionDetailText}
-                >
-                  Trade required: {displayTask.trade_required}
-                </Typography>
-              </View>
-            )}
-            {displayTask.safety_notes && (
-              <View style={styles.constructionDetail}>
-                <Icon name="shield" size="sm" color="error" />
-                <Typography
-                  variant="bodyMedium"
-                  style={styles.constructionDetailText}
-                >
-                  Safety notes: {displayTask.safety_notes}
-                </Typography>
-              </View>
-            )}
-          </View>
-        )}
+        {/* Project Section - uses ProjectDropdown with pending-change behavior */}
+        <View style={styles.section}>
+          <Typography variant="bodyMedium" style={styles.sectionTitle}>
+            Project
+          </Typography>
+          <ProjectDropdown
+            label={
+              (displayTask as any)?.project?.name ? "Project" : "Select project"
+            }
+            value={
+              (displayTask as any)?.project?.id || displayTask.projectId || null
+            }
+            onSelect={(project) => {
+              // pending only; apply on Save
+              const newProjectId = project ? project.id : null;
+              setPendingProjectId(newProjectId);
+              // reflect immediately in UI for user feedback
+              setOptimisticUpdates((prev) => ({
+                ...prev,
+                projectId: newProjectId as any,
+              }));
+            }}
+            bottomSheetTitle="Choose a project"
+          />
+        </View>
 
         {/* Description Section */}
         <View style={styles.section}>
@@ -649,6 +848,25 @@ export default function TaskDetailScreen() {
         </View>
       </ScrollView>
 
+      {/* Pending changes footer */}
+      {hasPendingChanges && (
+        <View style={[styles.pendingFooter, dynamicStyles.pendingFooter]}>
+          <View style={styles.pendingFooterContent}>
+            <Button
+              title="Discard"
+              variant="secondary"
+              onPress={handleDiscardChanges}
+              style={styles.pendingSecondary}
+            />
+            <Button
+              title="Save changes"
+              onPress={handleAcceptChanges}
+              style={styles.pendingPrimary}
+            />
+          </View>
+        </View>
+      )}
+
       {/* Task Actions Bottom Sheet */}
       <TaskActionsBottomSheet
         isVisible={showActionsMenu}
@@ -735,9 +953,29 @@ const styles = StyleSheet.create({
   completeButtonActive: {
     backgroundColor: colors.success,
   },
+  pendingFooter: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  pendingFooterContent: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  pendingSecondary: {
+    minWidth: 120,
+  },
+  pendingPrimary: {
+    minWidth: 140,
+  },
   metaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "stretch",
     gap: spacing.md,
   },
   metaItem: {
@@ -898,20 +1136,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     color: colors.textSecondary,
     textAlign: "center",
-  },
-
-  // Construction-specific details
-  constructionDetail: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-    padding: spacing.sm,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
-  },
-  constructionDetailText: {
-    color: colors.text,
-    flex: 1,
   },
 });

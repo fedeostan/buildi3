@@ -38,4 +38,11 @@ export const styles = StyleSheet.create({
   greenText: {
     color: colors.tagGreenText,
   },
+  // Neutral variant (not started)
+  neutralContainer: {
+    backgroundColor: colors.tagNeutralBackground,
+  },
+  neutralText: {
+    color: colors.tagNeutralText,
+  },
 });

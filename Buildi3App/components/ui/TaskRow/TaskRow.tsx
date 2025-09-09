@@ -6,6 +6,7 @@ import { Typography } from "../Typography";
 import { DateTag, getTagText } from "../Tag";
 import Icon from "../Icon";
 import { spacing } from "../../../theme";
+import { getStageColor, getStageIcon, getStageLabel, isStageCompleted, getNextToggleStage } from "../../../utils/stageUtils";
 
 /**
  * TaskRow Component
@@ -29,11 +30,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
   style,
   isLastItem = false,
 }) => {
-  // Derive completion state from stage
-  const taskCompleted = stage === "completed" || isCompleted;
+  // Use stage utilities for consistent UI behavior across all stages
+  const stageColor = getStageColor(stage);
+  const stageIcon = getStageIcon(stage);
+  const stageCompleted = isStageCompleted(stage);
   
-  // Always use check-circle icon, only color changes based on completion
-  const iconColor = taskCompleted ? "green10" : "textTertiary";
+  // Maintain backward compatibility with isCompleted prop
+  const taskCompleted = stageCompleted || isCompleted;
   return (
     <View>
       <Pressable
@@ -51,24 +54,26 @@ const TaskRow: React.FC<TaskRowProps> = ({
         <Pressable
           style={styles.checkButton}
           onPress={() => {
-            // Handle both legacy onToggleComplete and new onStageChange
+            // Smart stage transitions using utilities
+            const nextStage = getNextToggleStage(stage);
+            
+            // Handle both legacy onToggleComplete and new onStageChange  
             if (onToggleComplete) {
               onToggleComplete(id, !taskCompleted);
             }
             if (onStageChange) {
-              const nextStage: TaskStage = stage === "completed" ? "not-started" : "completed";
               onStageChange(id, nextStage);
             }
           }}
           accessibilityRole="button"
           accessibilityLabel={
-            taskCompleted ? "Mark as incomplete" : "Mark as complete"
+            `Current stage: ${getStageLabel(stage)}. Tap to change to ${getStageLabel(getNextToggleStage(stage))}`
           }
         >
           <Icon
-            name="check-circle"
+            name={stageIcon}
             size="md"
-            color={iconColor}
+            color={stageColor}
             style={{ marginLeft: -spacing.xs / 4 }}
           />
         </Pressable>

@@ -48,8 +48,7 @@ export const convertTaskToTaskRow = (task: Task & { project?: { name: string } }
     'not_started': 'not-started',
     'in_progress': 'in-progress',
     'completed': 'completed',
-    'blocked': 'blocked',
-    'under_inspection': 'blocked' // Treat inspection as blocked for UI
+    'blocked': 'blocked'
   }
 
   return {

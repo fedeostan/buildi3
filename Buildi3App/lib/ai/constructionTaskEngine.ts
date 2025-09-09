@@ -50,13 +50,9 @@ class RuleBasedTaskEngine {
         if (b.weather_dependent && !a.weather_dependent) return 1;
       }
 
-      // 3. Tasks waiting for inspection (time-sensitive)
-      const aInspectionPending =
-        a.stage === "under-inspection" || a.inspection_required;
-      const bInspectionPending =
-        b.stage === "under-inspection" || b.inspection_required;
-      if (aInspectionPending && !bInspectionPending) return -1;
-      if (bInspectionPending && !aInspectionPending) return 1;
+      // 3. Tasks requiring inspection (time-sensitive)
+      if (a.inspection_required && !b.inspection_required) return -1;
+      if (b.inspection_required && !a.inspection_required) return 1;
 
       // 4. Standard priority order
       const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -76,11 +72,10 @@ class RuleBasedTaskEngine {
 
       // 6. Stage readiness (ready tasks before blocked ones)
       const stageOrder = {
-        "in-progress": 6,
-        "not-started": 5,
+        "in-progress": 5,
+        "not-started": 4,
         completed: 1,
         blocked: 2,
-        "under-inspection": 4,
       };
       const stageA = stageOrder[a.stage as TaskStage] || 3;
       const stageB = stageOrder[b.stage as TaskStage] || 3;
@@ -150,7 +145,6 @@ class RuleBasedTaskEngine {
       const stageProgression = [
         "not-started",
         "in-progress",
-        "under-inspection",
         "completed",
       ];
       const localIndex = stageProgression.indexOf(localUpdate.stage);

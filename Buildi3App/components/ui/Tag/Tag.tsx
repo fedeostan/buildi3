@@ -46,10 +46,15 @@ const Tag: React.FC<TagProps> = ({
           container: styles.greenContainer,
           text: styles.greenText,
         };
+      case "neutral":
+        return {
+          container: styles.neutralContainer,
+          text: styles.neutralText,
+        };
       default:
         return {
-          container: styles.greenContainer,
-          text: styles.greenText,
+          container: styles.neutralContainer,
+          text: styles.neutralText,
         };
     }
   };

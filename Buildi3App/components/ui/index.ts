@@ -34,13 +34,25 @@ export { default as UpcomingTaskWidget } from "./UpcomingTaskWidget";
 export { default as TaskRow } from "./TaskRow";
 export type { TaskRowProps } from "./TaskRow";
 export { default as DraggableTaskRow } from "./DraggableTaskRow";
-export type { DraggableTaskRowProps, TaskDragPayload, SectionDropPayload } from "./DraggableTaskRow";
+export type {
+  DraggableTaskRowProps,
+  TaskDragPayload,
+  SectionDropPayload,
+} from "./DraggableTaskRow";
 export { DragProvider, useDragContext } from "./DragContext";
 
 // Input system (React Native best practices with Figma design)
 export { default as Input } from "./Input";
 export { default as TextArea } from "./TextArea";
 export { default as Dropdown } from "./Dropdown";
+export { default as AssignedToDropDown } from "./AssignedToDropDown";
+export { ProjectDropdown } from "./ProjectDropdown";
+export { default as DueDateDropdown } from "./DueDateDropdown";
+export { IconTag } from "./Tag";
+export type {
+  AssignedToDropDownProps,
+  ContactOption,
+} from "./AssignedToDropDown";
 
 // Control system (Interactive components)
 export { default as SegmentedControl } from "./SegmentedControl";
@@ -79,7 +91,14 @@ export type { TaskSectionProps } from "./TaskSection";
 
 // Task Actions Bottom Sheet (Atomic Design - Organism)
 export { default as TaskActionsBottomSheet } from "./TaskActionsBottomSheet";
-export type { TaskActionsBottomSheetProps, TaskAction } from "./TaskActionsBottomSheet";
+export type {
+  TaskActionsBottomSheetProps,
+  TaskAction,
+} from "./TaskActionsBottomSheet";
+
+// Task Detail Title (Atom/Molecule combo)
+export { default as TaskDetailTitle } from "./TaskDetailTitle";
+export type { TaskDetailTitleProps } from "./TaskDetailTitle";
 
 // Note: Import types directly from component folders when needed:
 // import type { TypographyProps } from './components/ui/Typography';

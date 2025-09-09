@@ -2,6 +2,7 @@ import React from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { colors, spacing } from "../../theme";
 import {
   GeneralHeader,
@@ -34,18 +35,21 @@ export default function TasksScreen() {
     updateTaskStage,
     getTasksByStage,
     refreshTasks,
+    refreshTasksSoft,
   } = useTasks({
     includeCompleted: true,
-    orderBy: 'due_date',
-    orderDirection: 'asc'
+    orderBy: "due_date",
+    orderDirection: "asc",
   });
 
   // Section expansion state
-  const [expandedSections, setExpandedSections] = React.useState<Record<TaskStage, boolean>>({
+  const [expandedSections, setExpandedSections] = React.useState<
+    Record<TaskStage, boolean>
+  >({
     "not-started": true,
-    "in-progress": true, 
-    "completed": false,
-    "blocked": false,
+    "in-progress": true,
+    completed: false,
+    blocked: false,
   });
 
   // Context-specific menu options for Tasks screen
@@ -100,34 +104,52 @@ export default function TasksScreen() {
 
   // Handle section toggle
   const handleToggleSection = (stage: TaskStage) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
       [stage]: !prev[stage],
     }));
   };
 
+  // Refresh tasks whenever this screen gains focus (returning from detail)
+  // Avoid spinner thrash by doing a soft refresh on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshTasksSoft();
+      return undefined;
+    }, [refreshTasksSoft])
+  );
+
   // Handle task stage change using real backend with immediate UI feedback
   const handleTaskStageChange = async (taskId: string, newStage: TaskStage) => {
-    console.log(`🎯 handleTaskStageChange called: taskId=${taskId}, newStage=${newStage}`)
+    console.log(
+      `🎯 handleTaskStageChange called: taskId=${taskId}, newStage=${newStage}`
+    );
     try {
-      console.log(`🎯 About to call updateTaskStage with optimistic updates...`)
+      console.log(
+        `🎯 About to call updateTaskStage with optimistic updates...`
+      );
       const result = await updateTaskStage(taskId, newStage);
-      console.log(`🎯 updateTaskStage completed:`, result)
+      console.log(`🎯 updateTaskStage completed:`, result);
       if (result.error) {
-        console.error('❌ Failed to update task stage:', result.error);
+        console.error("❌ Failed to update task stage:", result.error);
         // TODO: Show user-friendly error notification
         // The optimistic update will be rolled back automatically
       } else {
-        console.log(`✅ Task stage updated successfully with immediate UI feedback!`)
+        console.log(
+          `✅ Task stage updated successfully with immediate UI feedback!`
+        );
       }
     } catch (error) {
-      console.error('❌ Error updating task stage:', error);
+      console.error("❌ Error updating task stage:", error);
       // TODO: Show user-friendly error notification
     }
   };
 
   // Handle task completion toggle (legacy support)
-  const handleTaskToggleComplete = async (taskId: string, completed: boolean) => {
+  const handleTaskToggleComplete = async (
+    taskId: string,
+    completed: boolean
+  ) => {
     const newStage: TaskStage = completed ? "completed" : "not-started";
     await handleTaskStageChange(taskId, newStage);
   };
@@ -135,39 +157,52 @@ export default function TasksScreen() {
   // Handle task press - navigate to task detail screen (ID-only pattern)
   const handleTaskPress = (task: any) => {
     if (!task?.id) {
-      console.error('TasksScreen: Cannot navigate to task detail - missing task ID:', task);
+      console.error(
+        "TasksScreen: Cannot navigate to task detail - missing task ID:",
+        task
+      );
       return;
     }
-    
+
     router.push({
-      pathname: '/task-detail/[id]',
-      params: { id: task.id }
+      pathname: "/task-detail/[id]",
+      params: { id: task.id },
     });
   };
 
   // Handle drag start
   const handleDragStart = (payload: TaskDragPayload) => {
-    console.log(`🎯 Started dragging task: "${payload.title}" from ${payload.stage}`);
+    console.log(
+      `🎯 Started dragging task: "${payload.title}" from ${payload.stage}`
+    );
   };
 
-  // Handle drag end  
+  // Handle drag end
   const handleDragEnd = (payload: TaskDragPayload) => {
     console.log(`🎯 Ended dragging task: "${payload.title}"`);
   };
 
   // Handle task drop - move task to new stage with immediate UI feedback
-  const handleTaskDrop = (draggedTask: TaskDragPayload, targetStage: TaskStage) => {
-    console.log(`🚀 handleTaskDrop called: Moving task "${draggedTask.title}" from ${draggedTask.stage} to ${targetStage}`);
-    
+  const handleTaskDrop = (
+    draggedTask: TaskDragPayload,
+    targetStage: TaskStage
+  ) => {
+    console.log(
+      `🚀 handleTaskDrop called: Moving task "${draggedTask.title}" from ${draggedTask.stage} to ${targetStage}`
+    );
+
     // Skip if dropping on same stage
     if (draggedTask.stage === targetStage) {
       console.log(`🚀 Skipping drop - task already in ${targetStage} stage`);
       return;
     }
-    
+
     console.log(`🚀 Drag payload:`, draggedTask);
-    console.log(`🚀 About to call handleTaskStageChange with optimistic updates:`, {taskId: draggedTask.id, targetStage});
-    
+    console.log(
+      `🚀 About to call handleTaskStageChange with optimistic updates:`,
+      { taskId: draggedTask.id, targetStage }
+    );
+
     // This will now provide immediate UI feedback via optimistic updates
     handleTaskStageChange(draggedTask.id, targetStage);
   };
@@ -226,8 +261,8 @@ export default function TasksScreen() {
           <Typography variant="bodyMedium" style={styles.errorMessage}>
             {error}
           </Typography>
-          <Typography 
-            variant="labelLarge" 
+          <Typography
+            variant="labelLarge"
             style={styles.retryButton}
             onPress={refreshTasks}
           >
@@ -261,7 +296,10 @@ export default function TasksScreen() {
                 key={config.stage}
                 title={config.title}
                 stage={config.stage}
-                tasks={tasksByStage[config.stage].map(task => ({ ...task, stage: task.stage || config.stage }))}
+                tasks={(tasksByStage[config.stage] || []).map((task) => ({
+                  ...task,
+                  stage: task.stage || config.stage,
+                }))}
                 isExpanded={expandedSections[config.stage]}
                 onToggleExpanded={handleToggleSection}
                 onTaskPress={handleTaskPress}
@@ -297,34 +335,34 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: spacing.lg,
   },
   loadingText: {
     marginTop: spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
     color: colors.textSecondary,
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: spacing.lg,
   },
   errorTitle: {
     color: colors.error,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.sm,
   },
   errorMessage: {
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.lg,
   },
   retryButton: {
     color: colors.primary,
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+    textAlign: "center",
+    textDecorationLine: "underline",
   },
 });

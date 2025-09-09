@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
-import { Typography, Icon } from '../';
-import { styles } from './styles';
-import { MenuListItemProps } from './types';
-import { colors } from '../../../theme';
+import React from "react";
+import { View, TouchableOpacity } from "react-native";
+import Typography from "../Typography";
+import Icon from "../Icon";
+import { styles } from "./styles";
+import { MenuListItemProps } from "./types";
+import { colors } from "../../../theme";
 
 /**
  * MenuListItem Atom Component
@@ -31,15 +32,16 @@ const MenuListItem: React.FC<MenuListItemProps> = ({
   title,
   iconName,
   onPress,
-  variant = 'default',
+  variant = "default",
   showChevron = true,
   style,
   accessibilityLabel,
   testID,
 }) => {
   // Determine colors based on variant
-  const titleColor = variant === 'destructive' ? colors.error : colors.text;
-  const iconColor = variant === 'destructive' ? colors.error : colors.textSecondary;
+  const titleColor = variant === "destructive" ? colors.error : colors.text;
+  const iconColor =
+    variant === "destructive" ? colors.error : colors.textSecondary;
 
   return (
     <TouchableOpacity
@@ -54,20 +56,18 @@ const MenuListItem: React.FC<MenuListItemProps> = ({
       <View style={styles.content}>
         {/* Left Section - Icon */}
         <View style={styles.leftSection}>
-          <Icon 
-            name={iconName}
-            size="md"
-            color={iconColor}
-          />
+          <Icon name={iconName} size="md" color={iconColor} />
         </View>
 
         {/* Middle Section - Title */}
         <View style={styles.middleSection}>
-          <Typography 
+          <Typography
             variant="bodyLarge"
             style={[
               styles.title,
-              variant === 'destructive' ? styles.titleDestructive : styles.titleDefault,
+              variant === "destructive"
+                ? styles.titleDestructive
+                : styles.titleDefault,
               { color: titleColor },
             ]}
           >
@@ -78,11 +78,7 @@ const MenuListItem: React.FC<MenuListItemProps> = ({
         {/* Right Section - Chevron */}
         {showChevron && (
           <View style={styles.rightSection}>
-            <Icon 
-              name="chevron-right"
-              size="md"
-              color={colors.textTertiary}
-            />
+            <Icon name="chevron-right" size="md" color={colors.textTertiary} />
           </View>
         )}
       </View>

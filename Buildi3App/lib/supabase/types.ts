@@ -1160,7 +1160,8 @@ export interface Profile {
 }
 
 /**
- * Task stage enumeration matching frontend component expectations
+ * Task stage enumeration matching database schema constraints
+ * Supports all 4 core stages defined in tasks table
  */
 export type TaskStage = "not-started" | "in-progress" | "completed" | "blocked";
 

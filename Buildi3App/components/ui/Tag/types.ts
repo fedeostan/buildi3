@@ -1,6 +1,6 @@
 import { ViewStyle, TextStyle } from "react-native";
 
-export type TagVariant = "red" | "yellow" | "green";
+export type TagVariant = "red" | "yellow" | "green" | "neutral";
 
 export interface TagProps {
   /** Tag variant determines color scheme */

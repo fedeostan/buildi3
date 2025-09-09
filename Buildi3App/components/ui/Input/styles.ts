@@ -107,10 +107,10 @@ export const styles = StyleSheet.create({
 
   // Right icon container
   rightIconContainer: {
-    width: 20,
-    height: 20,
     justifyContent: "center",
     alignItems: "center",
+    paddingLeft: spacing.xs,
+    flexShrink: 0,
   },
 
   // Error message styles
